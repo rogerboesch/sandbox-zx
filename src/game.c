@@ -132,6 +132,7 @@ void game_init(void) {
     scroll_y = 0;
     layer2_scroll(0);
     layer2_scroll_x(0);
+    tilemap_scroll(0);
 }
 
 // Fire a bullet from player position (fires upward)
@@ -326,8 +327,11 @@ void game_update(void) {
     // Update scrolling (vertical scroll - decrement to scroll downward)
     scroll_y -= SCROLL_SPEED;
 
-    // Layer 2 scrolls
-    layer2_scroll(scroll_y);
+    // Tilemap (highway) scrolls at full speed
+    tilemap_scroll(scroll_y);
+
+    // Layer 2 (background) scrolls at half speed for parallax
+    layer2_scroll(scroll_y / 2);
 
     // Horizontal parallax: background shifts opposite to player position
     // Player center is at 120, offset is scaled down for subtle effect
@@ -407,8 +411,7 @@ void game_render(void) {
     uint8_t i;
     uint8_t sprite_slot = 0;
 
-    // Background and tilemap are handled by hardware scrolling
-    // Just render sprites here
+    // Highway is rendered by tilemap hardware (scrolled via tilemap_scroll)
 
     // Render player sprite (with flicker if invincible)
     if (player.invincible == 0 || (player.invincible & 0x04)) {

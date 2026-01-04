@@ -59,6 +59,7 @@
 #define SPRITE_EXPLOSION 4
 #define SPRITE_LIFE     5
 #define SPRITE_DIGIT_0  6   // Digits 0-9 are patterns 6-15
+#define SPRITE_HIGHWAY  16  // Highway tile (cyan with white left/top border)
 
 // HUD sprite slots (high slots to avoid game sprites)
 #define HUD_SPRITE_LIFE_BASE  24  // 3 life sprites: 24, 25, 26

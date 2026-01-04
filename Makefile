@@ -54,4 +54,12 @@ run: $(BIN_DIR)/$(OUTPUT).nex
 	@echo "  Kempston joystick also supported"
 	@echo ""
 
-.PHONY: all clean run tap sna test
+# CSpect emulator path
+CSPECT_DIR = /Applications/CSpect3_0_15_2
+CSPECT = $(CSPECT_DIR)/CSpect.exe
+
+# Start game in CSpect emulator
+start: $(BIN_DIR)/$(OUTPUT).nex
+	cd $(CSPECT_DIR) && mono $(CSPECT) -w4 -vsync -s28 -tv -basickeys -zxnext -nextrom "$(CURDIR)/$(BIN_DIR)/$(OUTPUT).nex"
+
+.PHONY: all clean run tap sna test start
