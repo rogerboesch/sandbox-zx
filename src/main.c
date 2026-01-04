@@ -82,8 +82,8 @@ static void init_next(void) {
 // Enable gameplay graphics
 static void enable_gameplay(void) {
     layer2_enable();
-    tilemap_enable();
-    set_layers_gameplay();
+    // tilemap_enable();  // TEMP: disabled for Layer 2 testing
+    // set_layers_gameplay();  // TEMP: disabled for Layer 2 testing
 }
 
 // Disable gameplay graphics (for menus)
@@ -96,13 +96,13 @@ static void disable_gameplay(void) {
 // Main function
 int main(void) {
     uint8_t input;
-    uint8_t title_mode = 1;
     uint8_t debounce = 0;
 
     // Initialize
     init_next();
 
-    // Show title
+    // Start at title screen
+    game.state = STATE_TITLE;
     draw_title();
 
     while (1) {
@@ -110,24 +110,28 @@ int main(void) {
 
         input = input_read();
 
-        if (title_mode) {
-            if ((input & INPUT_FIRE) && debounce == 0) {
-                title_mode = 0;
-                debounce = 10;
-                ula_clear();
-                enable_gameplay();
-                game_init();
-            }
-        } else {
-            if (game.state == STATE_PLAYING) {
-                game_update();
-                game_render();
+        switch (game.state) {
+            case STATE_TITLE:
+                if ((input & INPUT_FIRE) && debounce == 0) {
+                    debounce = 10;
+                    ula_clear();
+                    enable_gameplay();
+                    game_init();
+                }
+                break;
+
+            case STATE_PLAYING:
+                // TEMP: disabled for Layer 2 testing
+                // game_update();
+                // game_render();
 
                 // Apply shake when hit
-                if (game.crash_timer > 0) {
-                    apply_shake();
-                }
-            } else if (game.state == STATE_GAMEOVER) {
+                // if (game.crash_timer > 0) {
+                //     apply_shake();
+                // }
+                break;
+
+            case STATE_GAMEOVER:
                 // Hide all sprites
                 for (uint8_t s = 0; s < 32; s++) {
                     sprite_hide(s);
@@ -141,7 +145,10 @@ int main(void) {
                     enable_gameplay();
                     game_init();
                 }
-            }
+                break;
+
+            default:
+                break;
         }
 
         if (debounce > 0) debounce--;
