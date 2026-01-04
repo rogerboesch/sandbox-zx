@@ -155,7 +155,7 @@ static void tilemap_fill(void) {
 }
 
 // Enable tilemap display
-static void tilemap_enable(void) {
+void tilemap_enable(void) {
     // Register 0x6B: Tilemap Control
     // Bit 7: Enable tilemap
     // Bit 6: 0 = 40x32, 1 = 80x32
@@ -165,6 +165,12 @@ static void tilemap_enable(void) {
     // Bit 0: 0 = 4-bit tiles, 1 = 8-bit tiles
     IO_NEXTREG_REG = REG_TILEMAP_CTRL;
     IO_NEXTREG_DAT = 0x80;  // Enable tilemap, 40x32, 4-bit tiles
+}
+
+// Disable tilemap display
+void tilemap_disable(void) {
+    IO_NEXTREG_REG = REG_TILEMAP_CTRL;
+    IO_NEXTREG_DAT = 0x00;  // Disable tilemap
 }
 
 // Initialize tilemap
@@ -194,8 +200,7 @@ static void tilemap_init(void) {
     IO_NEXTREG_REG = REG_TILEMAP_ATTR;
     IO_NEXTREG_DAT = 0x00;
 
-    // Enable the tilemap
-    tilemap_enable();
+    // Tilemap starts disabled (enabled when gameplay starts)
 }
 
 // ============================================================
@@ -220,6 +225,9 @@ void layer2_enable(void) {
     // Enable Layer 2
     z80_outp(LAYER2_PORT, 0x02);
 
+    // Enable tilemap (highway)
+    tilemap_enable();
+
     // Register 0x15: Sprite and Layers System
     // Bits 4-2: Layer priority (SLU)
     //   000 = S L U (Sprites > Layer2 > ULA/Tilemap)
@@ -233,6 +241,9 @@ void layer2_enable(void) {
 void layer2_disable(void) {
     // Disable Layer 2
     z80_outp(LAYER2_PORT, 0x00);
+
+    // Disable tilemap
+    tilemap_disable();
 
     // Sprites only
     IO_NEXTREG_REG = 0x15;

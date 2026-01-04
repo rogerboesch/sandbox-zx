@@ -36,7 +36,7 @@ static void print_at(uint8_t x, uint8_t y, const char *str) {
     uint8_t *attr = (uint8_t *)(ATTR_ADDR + (y << 5) + x);
 
     while (*str) {
-        uint8_t *font = (uint8_t *)(0x3D00 + ((*str) << 3));
+        uint8_t *font = (uint8_t *)(0x3D00 + ((*str - 32) << 3));
         for (uint8_t i = 0; i < 8; i++) {
             *(scr + (i << 8)) = font[i];
         }

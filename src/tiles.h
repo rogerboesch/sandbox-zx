@@ -31,6 +31,8 @@ void tiles_init(void);
 // Enable/disable graphics layers
 void layer2_enable(void);
 void layer2_disable(void);
+void tilemap_enable(void);
+void tilemap_disable(void);
 
 // Scroll Layer 2 (background - half speed)
 void layer2_scroll(int16_t offset_y);
