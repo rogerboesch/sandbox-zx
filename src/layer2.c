@@ -50,7 +50,7 @@ void layer2_init(void) {
 
 // Enable Layer 2 display
 void layer2_enable(void) {
-    z80_outp(LAYER2_PORT, 0x02);
+    z80_outp(LAYER2_PORT, 0x01);
 }
 
 // Disable Layer 2 display

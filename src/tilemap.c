@@ -165,8 +165,10 @@ void set_layers_gameplay(void) {
     IO_NEXTREG_DAT = 0x0B;  // S U L order, sprites visible and over border
 }
 
-// Set layer priority for menus (Sprites and ULA only)
+// Set layer priority for menus (ULA only, no sprites)
 void set_layers_menu(void) {
+    // U L S order (101) - ULA on top
+    // Bit 0 = 0 (sprites disabled)
     IO_NEXTREG_REG = 0x15;
-    IO_NEXTREG_DAT = 0x01;  // Sprites visible
+    IO_NEXTREG_DAT = 0x14;  // 0b00010100 = U L S, no sprites
 }

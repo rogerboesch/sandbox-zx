@@ -82,8 +82,8 @@ static void init_next(void) {
 // Enable gameplay graphics
 static void enable_gameplay(void) {
     layer2_enable();
-    // tilemap_enable();  // TEMP: disabled for Layer 2 testing
-    // set_layers_gameplay();  // TEMP: disabled for Layer 2 testing
+    tilemap_enable();  
+    set_layers_gameplay();  
 }
 
 // Disable gameplay graphics (for menus)
@@ -97,6 +97,7 @@ static void disable_gameplay(void) {
 int main(void) {
     uint8_t input;
     uint8_t debounce = 0;
+    uint8_t prev_state = STATE_TITLE;
 
     // Initialize
     init_next();
@@ -121,23 +122,25 @@ int main(void) {
                 break;
 
             case STATE_PLAYING:
-                // TEMP: disabled for Layer 2 testing
-                // game_update();
-                // game_render();
+                game_update();
+                game_render();
 
                 // Apply shake when hit
-                // if (game.crash_timer > 0) {
-                //     apply_shake();
-                // }
+                if (game.crash_timer > 0) {
+                    apply_shake();
+                }
                 break;
 
             case STATE_GAMEOVER:
-                // Hide all sprites
-                for (uint8_t s = 0; s < 32; s++) {
-                    sprite_hide(s);
+                // Only run setup once when entering this state
+                if (prev_state != STATE_GAMEOVER) {
+                    // Hide all sprites
+                    for (uint8_t s = 0; s < 32; s++) {
+                        sprite_hide(s);
+                    }
+                    disable_gameplay();
+                    draw_gameover();
                 }
-                disable_gameplay();
-                draw_gameover();
 
                 if ((input & INPUT_FIRE) && debounce == 0) {
                     debounce = 10;
@@ -151,6 +154,7 @@ int main(void) {
                 break;
         }
 
+        prev_state = game.state;
         if (debounce > 0) debounce--;
     }
 
