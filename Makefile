@@ -8,7 +8,10 @@ OUTPUT = dark_nebula
 BIN_DIR = bin
 
 # Source files
-SRCS = src/main.c src/sprites.c src/game.c src/tiles.c
+SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c
+
+# Header files
+HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h
 
 # Default target - creates NEX file for ZX Spectrum Next
 all: $(BIN_DIR)/$(OUTPUT).nex
@@ -18,7 +21,7 @@ $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 # Build NEX file (native ZX Spectrum Next format)
-$(BIN_DIR)/$(OUTPUT).nex: $(SRCS) src/game.h src/tiles.h | $(BIN_DIR)
+$(BIN_DIR)/$(OUTPUT).nex: $(SRCS) $(HDRS) | $(BIN_DIR)
 	$(COMPILER) $(TARGET) $(CFLAGS) $(SRCS) -o $(BIN_DIR)/$(OUTPUT) -create-app -subtype=nex
 
 # Build TAP file (compatible with emulators)

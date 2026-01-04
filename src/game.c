@@ -9,7 +9,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "game.h"
-#include "tiles.h"
+#include "layer2.h"
+#include "tilemap.h"
 
 // Global game objects
 Player player;
