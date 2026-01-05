@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "tilemap.h"
-#include "tile_def.h"
+#include "tiles.h"
 
 // Tilemap registers
 #define REG_TILEMAP_CTRL     0x6B
@@ -17,8 +17,10 @@
 // Use upper bank 5 area for tilemap (after ULA attributes at 0x5B00)
 // Tilemap data at 0x6000 (40x32 = 1280 bytes with 8-bit entries)
 // Tile definitions at 0x6600 (need 32 bytes per tile for 4-bit 8x8)
+// Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
+#define MAX_TILES       128  // First 8 rows of tilemap (128 * 32 = 4KB)
 
 // Scroll state
 int16_t scroll_y = 0;
@@ -28,9 +30,9 @@ static void tilemap_define_tiles(void) {
     uint8_t *dest = (uint8_t *)TILES_ADDR;
     uint8_t i;
 
-    for (i = 0; i < NUM_TILES; i++) {
-        memcpy(dest, tile_defs[i], 32);
-        dest += 32;
+    for (i = 0; i < MAX_TILES; i++) {
+        memcpy(dest, tilemap_tiles[i], TILE_SIZE);
+        dest += TILE_SIZE;
     }
 }
 
@@ -76,33 +78,24 @@ static void tilemap_setup_palette(void) {
     ZXN_NEXTREG(0x43, 0x00);
 }
 
-// Fill tilemap - highway in center, transparent elsewhere
+// Fill tilemap - highway in center using 2x2 tile blocks
 static void tilemap_fill(void) {
     uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
-    uint8_t has_dash;
 
-    // Highway spans tiles 16-23 (8 tiles wide, centered)
-    // Left border at tile 16, right border at tile 23
-    // Center dashes at tiles 19-20
+    // Highway spans tiles 16-23 (8 tiles wide = 4 blocks of 2x2)
     for (y = 0; y < 32; y++) {
-        has_dash = (y % 4 == 0);  // Dash every 4 rows
-
         for (x = 0; x < 40; x++) {
             uint8_t tile;
 
-            if (x == 16) {
-                // Left edge of highway
-                tile = has_dash ? TILE_BORDER_L_D : TILE_BORDER_L;
-            } else if (x == 23) {
-                // Right edge of highway
-                tile = has_dash ? TILE_BORDER_R_D : TILE_BORDER_R;
-            } else if (x > 16 && x < 23) {
-                // Inside highway
-                if ((x == 19 || x == 20) && has_dash) {
-                    tile = TILE_DASH;
+            if (x >= 16 && x <= 23) {
+                // Inside highway - use 2x2 block pattern
+                if (y & 1) {
+                    // Odd row: bottom tiles
+                    tile = (x & 1) ? TILE_ROAD_BR : TILE_ROAD_BL;
                 } else {
-                    tile = TILE_ROAD;
+                    // Even row: top tiles
+                    tile = (x & 1) ? TILE_ROAD_TR : TILE_ROAD_TL;
                 }
             } else {
                 tile = TILE_TRANS;
