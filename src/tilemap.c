@@ -173,15 +173,24 @@ void tilemap_scroll(int16_t offset_y) {
     IO_NEXTREG_DAT = (uint8_t)(offset_y & 0xFF);
 }
 
-// Set layer priority for gameplay (Sprites > Tilemap > Layer2)
+// Set layer priority for gameplay
+// ULA on top (for HUD text), then Sprites, Layer2, Tilemap at back
 void set_layers_gameplay(void) {
     // Register 0x15: Sprite and Layers System
-    // Bits 4-2: Layer priority (SLU)
-    //   010 = S U L (Sprites > ULA/Tilemap > Layer2)
+    // Bits 4-2: Layer priority
+    //   000 = S L U, 001 = L S U, 010 = S U L, 011 = L U S
+    //   100 = U S L, 101 = U L S
+    // We want ULA on top: U S L = 100
     // Bit 1: Sprites over border
     // Bit 0: Sprites visible
     IO_NEXTREG_REG = 0x15;
-    IO_NEXTREG_DAT = 0x0B;  // S U L order, sprites visible and over border
+    IO_NEXTREG_DAT = 0x13;  // 0b00010011 = U S L order, sprites visible and over border
+
+    // Register 0x14: Global Transparency Color
+    // Set ULA paper black (0x00) as transparent color
+    // This makes ULA black areas show-through to layers below
+    IO_NEXTREG_REG = 0x14;
+    IO_NEXTREG_DAT = 0x00;  // Black is transparent
 }
 
 // Set layer priority for menus (ULA only, no sprites)

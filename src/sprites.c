@@ -113,7 +113,6 @@ void sprites_init(void) {
 // 8-bit mode: 16x16 = 256 bytes per pattern
 void sprites_upload_patterns(void) {
     uint16_t i;
-    uint8_t d;
 
     // Select sprite pattern slot 0
     z80_outp(SPRITE_SLOT_PORT, SPRITE_PLAYER);
@@ -143,19 +142,7 @@ void sprites_upload_patterns(void) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_explosion[i]);
     }
 
-    // Upload life sprite (slot 5)
-    for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_life[i]);
-    }
-
-    // Upload digit sprites (slots 6-15 for digits 0-9)
-    for (d = 0; d < 10; d++) {
-        for (i = 0; i < 256; i++) {
-            z80_outp(SPRITE_PATTERN_PORT, sprite_digits[d][i]);
-        }
-    }
-
-    // Upload highway sprite (slot 16)
+    // Upload highway sprite (slot 5)
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_highway[i]);
     }

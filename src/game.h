@@ -48,13 +48,7 @@
 #define SPRITE_ENEMY1   2
 #define SPRITE_ENEMY2   3
 #define SPRITE_EXPLOSION 4
-#define SPRITE_LIFE     5
-#define SPRITE_DIGIT_0  6   // Digits 0-9 are patterns 6-15
-#define SPRITE_HIGHWAY  16  // Highway tile (cyan with white left/top border)
-
-// HUD sprite slots (high slots to avoid game sprites)
-#define HUD_SPRITE_LIFE_BASE  24  // 3 life sprites: 24, 25, 26
-#define HUD_SPRITE_SCORE_BASE 27  // 5 score digits: 27-31
+#define SPRITE_HIGHWAY  5
 
 // Colors (9-bit RGB, using 8-bit approximation)
 #define COLOR_BLACK     0x00
@@ -89,14 +83,6 @@ typedef struct {
     uint8_t frame;
     uint8_t health;
 } Entity;
-
-// Star structure for background
-typedef struct {
-    uint8_t x;
-    uint8_t y;
-    uint8_t speed;
-    uint8_t color;
-} Star;
 
 // Player structure
 typedef struct {

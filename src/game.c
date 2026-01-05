@@ -7,6 +7,7 @@
 #include "sprites.h"
 #include "layer2.h"
 #include "tilemap.h"
+#include "ula.h"
 
 // Global game objects
 Player player;
@@ -340,40 +341,21 @@ int8_t game_get_shake_offset(void) {
     return (game.shake_timer & 0x02) ? 2 : -2;
 }
 
-// Render HUD using sprites (lives on left, score on right)
-static void render_hud_sprites(void) {
-    uint8_t i;
-    uint16_t score = game.score;
-    uint8_t digits[5];
-    uint8_t slot;
-
-    // Render lives (top left, Y=0)
-    for (i = 0; i < 3; i++) {
-        slot = HUD_SPRITE_LIFE_BASE + i;
-        if (i < player.lives) {
-            sprite_set(slot, 4 + (i * 14), 0, SPRITE_LIFE, 0);
-        } else {
-            sprite_hide(slot);
-        }
-    }
-
-    // Extract score digits (5 digits, right-aligned)
-    for (i = 0; i < 5; i++) {
-        digits[4 - i] = score % 10;
-        score /= 10;
-    }
-
-    // Render score digits (top right, Y=0)
-    for (i = 0; i < 5; i++) {
-        slot = HUD_SPRITE_SCORE_BASE + i;
-        sprite_set(slot, 200 + (i * 10), 0, SPRITE_DIGIT_0 + digits[i], 0);
-    }
+// Render game
+// Render HUD text on ULA
+static void render_hud_text(void) {
+    ula_print_at(1, 0, "SCORE", ATTR_WHITE_ON_BLACK);
+    ula_print_num(7, 0, game.score, ATTR_YELLOW_ON_BLACK);
+    ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
+    ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
 }
 
-// Render game
 void game_render(void) {
     uint8_t i;
     uint8_t sprite_slot = 0;
+
+    // Render HUD text overlay
+    render_hud_text();
 
     // Highway is rendered by tilemap hardware (scrolled via tilemap_scroll)
 
@@ -399,11 +381,8 @@ void game_render(void) {
         }
     }
 
-    // Hide unused game sprite slots (up to HUD slots)
-    while (sprite_slot < HUD_SPRITE_LIFE_BASE) {
+    // Hide unused sprite slots
+    while (sprite_slot < 32) {
         sprite_hide(sprite_slot++);
     }
-
-    // Render HUD using dedicated sprite slots
-    render_hud_sprites();
 }
