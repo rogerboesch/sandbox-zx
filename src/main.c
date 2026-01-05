@@ -75,15 +75,15 @@ static void init_next(void) {
     // Set layer priority for menu (sprites only)
     set_layers_menu();
 
-    // Upload sprite patterns
-    sprites_upload_patterns();
+    // Initialize sprites (palette + patterns)
+    sprites_init();
 }
 
 // Enable gameplay graphics
 static void enable_gameplay(void) {
-    layer2_enable();
-    tilemap_enable();  
-    set_layers_gameplay();  
+    // layer2_enable();      // DISABLED FOR TESTING
+    // tilemap_enable();     // DISABLED FOR TESTING
+    set_layers_gameplay();
 }
 
 // Disable gameplay graphics (for menus)

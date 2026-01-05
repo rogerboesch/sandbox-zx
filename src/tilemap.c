@@ -65,8 +65,10 @@ static void tilemap_define_tiles(void) {
 // Set up tilemap palette
 static void tilemap_setup_palette(void) {
     // Select tilemap palette, auto-increment
+    // Palette select: 000=ULA, 010=Layer2, 100=Sprites, 110=Tilemap
+    // Tilemap first palette: bits 3-1 = 110 -> 0b00001100 = 0x0C
     IO_NEXTREG_REG = 0x43;
-    IO_NEXTREG_DAT = 0x30;
+    IO_NEXTREG_DAT = 0x0C;
 
     // Start at index 0
     IO_NEXTREG_REG = 0x40;
@@ -78,6 +80,10 @@ static void tilemap_setup_palette(void) {
     IO_NEXTREG_DAT = 0xE3;  // 1: Magenta
     IO_NEXTREG_DAT = 0xFF;  // 2: White
     IO_NEXTREG_DAT = 0xFC;  // 3: Yellow
+
+    // Reset palette control to ULA, ULANext disabled
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x00;
 }
 
 // Fill tilemap - highway in center, transparent elsewhere
