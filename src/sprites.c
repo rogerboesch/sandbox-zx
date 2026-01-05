@@ -8,6 +8,7 @@
 #include <intrinsic.h>
 #include <stdint.h>
 #include "game.h"
+#include "sprite_def.h"
 
 // ZX Spectrum Next I/O ports
 #define LAYER2_ACCESS_PORT    0x123B
@@ -41,392 +42,6 @@
 #define C_BRIGHT_YELLOW  14  // Bright Yellow
 #define C_BRIGHT_WHITE   15  // Bright White
 
-// Player ship - facing upward (bright white with bright cyan cockpit)
-// T=0xE3 (transparent), W=15 (bright white), C=13 (bright cyan)
-#define T 0xE3
-#define W 15
-#define C 13
-static const uint8_t sprite_player[256] = {
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,  // Row 0
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 1
-    T,T,T,T,T,W,W,W,W,W,W,T,T,T,T,T,  // Row 2
-    T,T,T,T,T,W,W,C,C,W,W,T,T,T,T,T,  // Row 3 - cyan cockpit
-    T,T,T,T,W,W,W,C,C,W,W,W,T,T,T,T,  // Row 4
-    T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,  // Row 5
-    T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,  // Row 6
-    T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,  // Row 7
-    T,T,W,W,W,W,W,W,W,W,W,W,W,W,T,T,  // Row 8
-    T,T,W,W,W,W,W,W,W,W,W,W,W,W,T,T,  // Row 9
-    T,W,W,W,T,W,W,W,W,W,W,T,W,W,W,T,  // Row 10
-    T,W,W,T,T,W,W,W,W,W,W,T,T,W,W,T,  // Row 11
-    W,W,W,T,T,T,W,W,W,W,T,T,T,W,W,W,  // Row 12
-    W,W,T,T,T,T,W,W,W,W,T,T,T,T,W,W,  // Row 13
-    W,T,T,T,T,T,T,W,W,T,T,T,T,T,T,W,  // Row 14
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T   // Row 15
-};
-#undef T
-#undef W
-#undef C
-
-// Bullet - vertical energy bolt (bright yellow/white)
-// T=0xE3 (transparent), W=15 (bright white), Y=14 (bright yellow)
-#define T 0xE3
-#define W 15
-#define Y 14
-static const uint8_t sprite_bullet[256] = {
-    T,T,T,T,T,T,T,Y,Y,T,T,T,T,T,T,T,  // Row 0
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,  // Row 1
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 2
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 3
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,  // Row 4
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,  // Row 5
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 6
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 7
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,  // Row 8
-    T,T,T,T,T,T,T,Y,Y,T,T,T,T,T,T,T,  // Row 9
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 10
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 11
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 12
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 13
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 14
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T   // Row 15
-};
-#undef T
-#undef W
-#undef Y
-
-// Enemy type 1 - alien fighter (bright red with bright yellow eyes)
-// T=0xE3 (transparent), R=10 (bright red), Y=14 (bright yellow)
-#define T 0xE3
-#define R 10
-#define Y 14
-static const uint8_t sprite_enemy1[256] = {
-    T,T,T,T,T,T,T,R,R,T,T,T,T,T,T,T,  // Row 0
-    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,  // Row 1
-    T,T,T,T,T,R,R,R,R,R,R,T,T,T,T,T,  // Row 2
-    T,T,T,T,R,R,R,Y,Y,R,R,R,T,T,T,T,  // Row 3 - yellow eyes
-    T,T,T,R,R,R,Y,Y,Y,Y,R,R,R,T,T,T,  // Row 4
-    T,T,R,R,R,R,R,R,R,R,R,R,R,R,T,T,  // Row 5
-    T,R,R,R,R,R,R,R,R,R,R,R,R,R,R,T,  // Row 6
-    R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,  // Row 7
-    R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,R,  // Row 8
-    T,R,R,R,R,R,R,R,R,R,R,R,R,R,R,T,  // Row 9
-    T,T,R,R,R,R,R,R,R,R,R,R,R,R,T,T,  // Row 10
-    T,T,T,R,R,R,Y,Y,Y,Y,R,R,R,T,T,T,  // Row 11
-    T,T,T,T,R,R,R,Y,Y,R,R,R,T,T,T,T,  // Row 12
-    T,T,T,T,T,R,R,R,R,R,R,T,T,T,T,T,  // Row 13
-    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,  // Row 14
-    T,T,T,T,T,T,T,R,R,T,T,T,T,T,T,T   // Row 15
-};
-#undef T
-#undef R
-#undef Y
-
-// Enemy type 2 - larger cruiser (bright green with bright yellow accents)
-// T=0xE3 (transparent), G=12 (bright green), Y=14 (bright yellow)
-#define T 0xE3
-#define G 12
-#define Y 14
-static const uint8_t sprite_enemy2[256] = {
-    T,T,T,T,G,G,G,G,G,G,G,G,T,T,T,T,  // Row 0
-    T,T,T,G,G,G,G,G,G,G,G,G,G,T,T,T,  // Row 1
-    T,T,G,G,G,G,G,G,G,G,G,G,G,G,T,T,  // Row 2
-    T,G,G,G,G,G,G,Y,Y,G,G,G,G,G,G,T,  // Row 3 - yellow
-    G,G,G,G,G,G,Y,Y,Y,Y,G,G,G,G,G,G,  // Row 4
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 5
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 6
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 7
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 8
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 9
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,  // Row 10
-    G,G,G,G,G,G,Y,Y,Y,Y,G,G,G,G,G,G,  // Row 11
-    T,G,G,G,G,G,G,Y,Y,G,G,G,G,G,G,T,  // Row 12
-    T,T,G,G,G,G,G,G,G,G,G,G,G,G,T,T,  // Row 13
-    T,T,T,G,G,G,G,G,G,G,G,G,G,T,T,T,  // Row 14
-    T,T,T,T,G,G,G,G,G,G,G,G,T,T,T,T   // Row 15
-};
-#undef T
-#undef G
-#undef Y
-
-// Explosion animation frame (red/yellow/white) - ZX doesn't have orange
-// T=0xE3 (transparent), W=15 (bright white), Y=14 (bright yellow), R=10 (bright red)
-#define T 0xE3
-#define W 15
-#define Y 14
-#define R 10
-static const uint8_t sprite_explosion[256] = {
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 0
-    T,T,T,T,R,T,T,T,T,T,T,R,T,T,T,T,  // Row 1
-    T,T,T,R,T,T,R,T,T,R,T,T,R,T,T,T,  // Row 2
-    T,T,R,T,T,Y,Y,Y,Y,Y,Y,T,T,R,T,T,  // Row 3
-    T,R,T,T,Y,W,W,W,W,W,W,Y,T,T,R,T,  // Row 4
-    T,T,T,Y,W,W,W,W,W,W,W,W,Y,T,T,T,  // Row 5
-    T,R,T,W,W,W,W,W,W,W,W,W,W,T,R,T,  // Row 6
-    R,T,Y,W,W,W,W,W,W,W,W,W,W,Y,T,R,  // Row 7
-    R,T,Y,W,W,W,W,W,W,W,W,W,W,Y,T,R,  // Row 8
-    T,R,T,W,W,W,W,W,W,W,W,W,W,T,R,T,  // Row 9
-    T,T,T,Y,W,W,W,W,W,W,W,W,Y,T,T,T,  // Row 10
-    T,R,T,T,Y,W,W,W,W,W,W,Y,T,T,R,T,  // Row 11
-    T,T,R,T,T,Y,Y,Y,Y,Y,Y,T,T,R,T,T,  // Row 12
-    T,T,T,R,T,T,R,T,T,R,T,T,R,T,T,T,  // Row 13
-    T,T,T,T,R,T,T,T,T,T,T,R,T,T,T,T,  // Row 14
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T   // Row 15
-};
-#undef T
-#undef W
-#undef Y
-#undef R
-
-// Highway tile - bright cyan fill with bright white border on left and top
-// W=15 (bright white), C=13 (bright cyan)
-#define W 15
-#define C 13
-static const uint8_t sprite_highway[256] = {
-    W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,  // Row 0 - all white
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 1 - cyan
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 2
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 3
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 4
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 5
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 6
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 7
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 8
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 9
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 10
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 11
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 12
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 13
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,  // Row 14
-    W,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C   // Row 15
-};
-#undef W
-#undef C
-
-// Life indicator - small ship icon (bright white, 8x8 centered in 16x16)
-// T=0xE3 (transparent), W=15 (bright white)
-#define T 0xE3
-#define W 15
-static const uint8_t sprite_life[256] = {
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 0
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 1
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 2
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 3
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,  // Row 4
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,  // Row 5
-    T,T,T,T,T,W,W,W,W,W,W,T,T,T,T,T,  // Row 6
-    T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,  // Row 7
-    T,T,T,W,T,W,W,W,W,W,W,T,W,T,T,T,  // Row 8
-    T,T,W,T,T,T,W,W,W,W,T,T,T,W,T,T,  // Row 9
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,  // Row 10
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 11
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 12
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 13
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,  // Row 14
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T   // Row 15
-};
-#undef T
-#undef W
-
-// Digit sprites for score display (12x12 centered in 16x16, digits 0-9)
-// T=0xE3 (transparent), W=15 (bright white)
-#define T 0xE3
-#define W 15
-static const uint8_t sprite_digits[10][256] = {
-    // Digit 0
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 1
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,W,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 2
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,W,T,T,T,T,T,
-        T,T,T,T,T,T,T,W,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,W,W,W,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 3
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 4
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 5
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 6
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 7
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,W,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 8
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    },
-    // Digit 9
-    {
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,W,W,T,T,T,
-        T,T,T,W,W,T,T,T,T,T,W,W,W,T,T,T,
-        T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-        T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
-    }
-};
-#undef T
-#undef W
-
 // Write to Next register
 static void nextreg_write(uint8_t reg, uint8_t val) {
     IO_NEXTREG_REG = reg;
@@ -452,46 +67,53 @@ static const uint8_t zx_palette[16] = {
     0x00,  // 8: Bright Black
     0x03,  // 9: Bright Blue
     0xE0,  // 10: Bright Red
-    0xE3,  // 11: Bright Magenta
+    0xE7,  // 11: Bright Magenta (avoid 0xE3 which is transparent)
     0x1C,  // 12: Bright Green
     0x1F,  // 13: Bright Cyan
     0xFC,  // 14: Bright Yellow
     0xFF   // 15: Bright White
 };
 
-// Set up sprite palette (ZX colors at 0-15, RGB332 identity for rest)
+// Set up sprite palette
+// Register 0x43 palette control uses:
+//   bits 6-4: palette for reading (SELECT)
+//   bits 3-1: palette for writing (ENABLE adds to this)
+//   bit 0: ULANext enable
+// From z88dk: SELECT_SPRITES_PALETTE_0 = 0x20, ENABLE_SPRITES_PALETTE_0 = 0x00
+// So to write to sprite palette 0: 0x20 | 0x00 = 0x20
 static void sprites_setup_palette(void) {
     uint16_t i;
+    uint8_t color;
 
-    // Transparency index is default 0xE3 (magenta)
+    // Select sprite palette 0 for writing (0x20)
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x20;
 
-    // Select sprite palette for writing
-    // Nextreg 0x43: bit 7=0 (auto-inc), bits 6-4=read palette, bits 3-1=write palette, bit 0=ULANext
-    // Palette select: 000=ULA, 010=Layer2, 100=Sprites, 110=Tilemap
-    // For sprites first palette: bits 3-1 = 100 -> 0b00001000 = 0x08
-    nextreg_write(0x43, 0x08);
+    // Set starting palette index to 0
+    IO_NEXTREG_REG = 0x40;
+    IO_NEXTREG_DAT = 0x00;
 
-    // Start at palette index 0
-    nextreg_write(0x40, 0);
-
-    // Write ZX Spectrum colors to indices 0-15
-    for (i = 0; i < 16; i++) {
-        nextreg_write(0x41, zx_palette[i]);
+    // Write palette entries using 8-bit format (register 0x41)
+    // Auto-increment is enabled by default
+    IO_NEXTREG_REG = 0x41;
+    for (i = 0; i < 256; i++) {
+        if (i < 16) {
+            color = zx_palette[i];
+        } else {
+            color = (uint8_t)i;  // RGB332 identity
+        }
+        IO_NEXTREG_DAT = color;
     }
 
-    // Write RGB332 identity for indices 16-255
-    for (i = 16; i < 256; i++) {
-        nextreg_write(0x41, (uint8_t)i);
-    }
-
-    // Reset palette control to ULA, ULANext disabled
-    nextreg_write(0x43, 0x00);
+    // Reset to ULA palette (0x00)
+    IO_NEXTREG_REG = 0x43;
+    IO_NEXTREG_DAT = 0x00;
 }
 
 // Initialize sprite system
 void sprites_init(void) {
-    // Enable sprites and set sprite priority over Layer 2
-    nextreg_write(NEXTREG_SPRITE_SYSTEM, 0x03);  // Enable sprites, sprites over ULA
+    // Enable sprites, sprites visible, over border
+    nextreg_write(NEXTREG_SPRITE_SYSTEM, 0x03);
 
     // Set up sprite palette
     sprites_setup_palette();

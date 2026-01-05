@@ -16,7 +16,6 @@
 Player player;
 Entity bullets[MAX_BULLETS];
 Entity enemies[MAX_ENEMIES];
-Star stars[MAX_STARS];
 GameData game;
 
 // Random seed
@@ -26,35 +25,6 @@ static uint16_t rand_seed = 0x1234;
 static uint8_t fast_rand(void) {
     rand_seed = rand_seed * 1103515245 + 12345;
     return (uint8_t)(rand_seed >> 8);
-}
-
-// Initialize star field
-void stars_init(void) {
-    uint8_t i;
-
-    for (i = 0; i < MAX_STARS; i++) {
-        stars[i].x = fast_rand();
-        stars[i].y = fast_rand() % 192;
-        stars[i].speed = (fast_rand() % STAR_LAYERS) + 1;
-
-        // Color based on depth (faster = brighter)
-        switch (stars[i].speed) {
-            case 1: stars[i].color = 0x49; break;  // Dim
-            case 2: stars[i].color = 0x92; break;  // Medium
-            case 3: stars[i].color = 0xFF; break;  // Bright
-            default: stars[i].color = 0x92; break;
-        }
-    }
-}
-
-// Update star field (disabled - no Layer 2 for now)
-void stars_update(void) {
-    // Stars disabled for initial prototype
-}
-
-// Render star field (disabled - no Layer 2 for now)
-void stars_render(void) {
-    // Stars disabled for initial prototype
 }
 
 // Read keyboard/joystick input
@@ -114,9 +84,6 @@ void game_init(void) {
     for (i = 0; i < MAX_ENEMIES; i++) {
         enemies[i].active = 0;
     }
-
-    // Initialize stars
-    stars_init();
 
     // Initialize game data
     game.state = STATE_PLAYING;

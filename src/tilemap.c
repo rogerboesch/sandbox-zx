@@ -118,7 +118,7 @@ void tilemap_init(void) {
     tilemap_define_tiles();
 
     // Set up palette
-    tilemap_setup_palette();
+    // tilemap_setup_palette();  // DISABLED FOR TESTING
 
     // Fill tilemap data
     tilemap_fill();
