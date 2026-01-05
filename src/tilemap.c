@@ -19,40 +19,84 @@
 #define TILES_ADDR      0x6600
 
 // Tile indices
-#define TILE_TRANS    0
-#define TILE_MAGENTA  1
-#define TILE_DASH     2
+#define TILE_TRANS       0
+#define TILE_ROAD        1   // Black road (solid)
+#define TILE_DASH        2   // Road with white center dash
+#define TILE_BORDER_L    3   // Left edge with cyan border
+#define TILE_BORDER_R    4   // Right edge with cyan border
+#define TILE_BORDER_L_D  5   // Left edge with dash
+#define TILE_BORDER_R_D  6   // Right edge with dash
+
+// Palette index for non-transparent black
+#define PAL_BLACK  8
 
 // Scroll state
 int16_t scroll_y = 0;
 
 // Define 8x8 tile patterns (4-bit = 32 bytes each)
 // Each byte = 2 pixels, X-major order
+// Palette: 0=transparent, 5=cyan, 7=white, 8=black (non-transparent)
 static void tilemap_define_tiles(void) {
     uint8_t *tiles = (uint8_t *)TILES_ADDR;
-    uint8_t i;
+    uint8_t i, row, col;
 
     // Tile 0: Transparent (palette index 0)
     for (i = 0; i < 32; i++) {
-        tiles[i] = 0x00;  // Two transparent pixels
+        tiles[i] = 0x00;
     }
     tiles += 32;
 
-    // Tile 1: Solid color (palette index 3 = magenta)
+    // Tile 1: Solid black road
     for (i = 0; i < 32; i++) {
-        tiles[i] = 0x33;  // Two magenta pixels
+        tiles[i] = (PAL_BLACK << 4) | PAL_BLACK;
     }
     tiles += 32;
 
-    // Tile 2: White dash on magenta (for center line)
-    for (i = 0; i < 32; i++) {
-        // Rows 3-4 are white (palette 7), rest magenta (palette 3)
-        uint8_t row = i / 4;  // 4 bytes per row (8 pixels / 2)
-        if (row >= 3 && row <= 4) {
-            tiles[i] = 0x77;  // Two white pixels
-        } else {
-            tiles[i] = 0x33;  // Two magenta pixels
+    // Tile 2: Black road with white center dash (rows 3-4)
+    for (row = 0; row < 8; row++) {
+        uint8_t color = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
+        for (col = 0; col < 4; col++) {
+            tiles[row * 4 + col] = (color << 4) | color;
         }
+    }
+    tiles += 32;
+
+    // Tile 3: Left border (cyan on left edge, black rest)
+    for (row = 0; row < 8; row++) {
+        // First byte: cyan + black, rest: black + black
+        tiles[row * 4 + 0] = (5 << 4) | PAL_BLACK;
+        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 3] = (PAL_BLACK << 4) | PAL_BLACK;
+    }
+    tiles += 32;
+
+    // Tile 4: Right border (black, cyan on right edge)
+    for (row = 0; row < 8; row++) {
+        tiles[row * 4 + 0] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 3] = (PAL_BLACK << 4) | 5;
+    }
+    tiles += 32;
+
+    // Tile 5: Left border with dash
+    for (row = 0; row < 8; row++) {
+        uint8_t fill = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
+        tiles[row * 4 + 0] = (5 << 4) | fill;
+        tiles[row * 4 + 1] = (fill << 4) | fill;
+        tiles[row * 4 + 2] = (fill << 4) | fill;
+        tiles[row * 4 + 3] = (fill << 4) | fill;
+    }
+    tiles += 32;
+
+    // Tile 6: Right border with dash
+    for (row = 0; row < 8; row++) {
+        uint8_t fill = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
+        tiles[row * 4 + 0] = (fill << 4) | fill;
+        tiles[row * 4 + 1] = (fill << 4) | fill;
+        tiles[row * 4 + 2] = (fill << 4) | fill;
+        tiles[row * 4 + 3] = (fill << 4) | 5;
     }
 }
 
@@ -102,26 +146,32 @@ static void tilemap_setup_palette(void) {
 static void tilemap_fill(void) {
     uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
+    uint8_t has_dash;
 
-    // 40 columns x 32 rows (8x8 tiles = 320x256 pixels, but only 256x192 visible)
-    // Screen is 256 pixels = 32 tiles visible (tiles 0-31)
-    // Center highway (8 tiles wide) at tiles 12-19 = pixels 96-159
-    // Center of screen = pixel 128, highway spans 96-159 (centered)
+    // Highway spans tiles 16-23 (8 tiles wide, centered)
+    // Left border at tile 16, right border at tile 23
+    // Center dashes at tiles 19-20
     for (y = 0; y < 32; y++) {
+        has_dash = (y % 4 == 0);  // Dash every 4 rows
+
         for (x = 0; x < 40; x++) {
             uint8_t tile;
 
-            // Highway: 8 tiles wide, centered on 256-pixel screen
-            // Adjusted: tiles 16-23 to center on screen
-            if (x >= 16 && x <= 23) {
-                // Highway area
-                if ((x == 19 || x == 20) && (y % 4 == 0)) {
-                    tile = TILE_DASH;  // Center dashes every 4 tiles
+            if (x == 16) {
+                // Left edge of highway
+                tile = has_dash ? TILE_BORDER_L_D : TILE_BORDER_L;
+            } else if (x == 23) {
+                // Right edge of highway
+                tile = has_dash ? TILE_BORDER_R_D : TILE_BORDER_R;
+            } else if (x > 16 && x < 23) {
+                // Inside highway
+                if ((x == 19 || x == 20) && has_dash) {
+                    tile = TILE_DASH;
                 } else {
-                    tile = TILE_MAGENTA;
+                    tile = TILE_ROAD;
                 }
             } else {
-                tile = TILE_TRANS;  // Transparent - shows Layer 2
+                tile = TILE_TRANS;
             }
             *tmap++ = tile;
         }
