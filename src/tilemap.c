@@ -104,15 +104,19 @@ static void tilemap_fill(void) {
     uint8_t x, y;
 
     // 40 columns x 32 rows (8x8 tiles = 320x256 pixels, but only 256x192 visible)
-    // Highway at pixels 96-159 = tiles 12-19 (8x8 tiles, so 96/8=12, 159/8=19)
+    // Screen is 256 pixels = 32 tiles visible (tiles 0-31)
+    // Center highway (8 tiles wide) at tiles 12-19 = pixels 96-159
+    // Center of screen = pixel 128, highway spans 96-159 (centered)
     for (y = 0; y < 32; y++) {
         for (x = 0; x < 40; x++) {
             uint8_t tile;
 
-            if (x >= 12 && x <= 19) {
+            // Highway: 8 tiles wide, centered on 256-pixel screen
+            // Adjusted: tiles 16-23 to center on screen
+            if (x >= 16 && x <= 23) {
                 // Highway area
-                if ((x == 15 || x == 16) && (y % 4 == 0)) {
-                    tile = TILE_DASH;  // Center dashes
+                if ((x == 19 || x == 20) && (y % 4 == 0)) {
+                    tile = TILE_DASH;  // Center dashes every 4 tiles
                 } else {
                     tile = TILE_MAGENTA;
                 }

@@ -298,11 +298,11 @@ void game_update(void) {
     // Layer 2 (background) scrolls at half speed for parallax
     layer2_scroll(scroll_y / 2);
 
-    // Horizontal parallax: background shifts opposite to player position
-    // Player center is at 120, offset is scaled down for subtle effect
+    // Horizontal parallax: grid scrolls opposite to player movement
+    // Player moves right -> grid scrolls left, player moves left -> grid scrolls right
     {
         int16_t player_offset = (player.x - 120) / 4;  // Divide by 4 for subtle effect
-        layer2_scroll_x(-player_offset);  // Negative = opposite direction
+        layer2_scroll_x(player_offset);  // Positive offset = grid scrolls left
     }
 
     // Update game objects
