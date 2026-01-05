@@ -80,23 +80,21 @@ static void tilemap_define_tiles(void) {
     }
     tiles += 32;
 
-    // Tile 5: Left border with dash
+    // Tile 5: Left border (same as tile 3, no dash on edges)
     for (row = 0; row < 8; row++) {
-        uint8_t fill = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
-        tiles[row * 4 + 0] = (5 << 4) | fill;
-        tiles[row * 4 + 1] = (fill << 4) | fill;
-        tiles[row * 4 + 2] = (fill << 4) | fill;
-        tiles[row * 4 + 3] = (fill << 4) | fill;
+        tiles[row * 4 + 0] = (5 << 4) | PAL_BLACK;
+        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 3] = (PAL_BLACK << 4) | PAL_BLACK;
     }
     tiles += 32;
 
-    // Tile 6: Right border with dash
+    // Tile 6: Right border (same as tile 4, no dash on edges)
     for (row = 0; row < 8; row++) {
-        uint8_t fill = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
-        tiles[row * 4 + 0] = (fill << 4) | fill;
-        tiles[row * 4 + 1] = (fill << 4) | fill;
-        tiles[row * 4 + 2] = (fill << 4) | fill;
-        tiles[row * 4 + 3] = (fill << 4) | 5;
+        tiles[row * 4 + 0] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
+        tiles[row * 4 + 3] = (PAL_BLACK << 4) | 5;
     }
 }
 
