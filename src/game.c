@@ -399,11 +399,18 @@ void game_render(void) {
         }
     }
 
-    // Render enemies
+    // Render enemies with rotation
     for (i = 0; i < MAX_ENEMIES; i++) {
         if (enemies[i].active) {
             uint8_t pattern = (enemies[i].type == 0) ? SPRITE_ENEMY1 : SPRITE_ENEMY2;
-            sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern, 0);
+            // Rotate based on frame count + enemy index for variety
+            // Byte 2 format: bit 1=Rotate, bit 2=Y mirror, bit 3=X mirror
+            uint8_t rot = ((game.frame_count >> 2) + i) & 0x07;
+            uint8_t flags = 0;
+            if (rot & 0x04) flags |= 0x02;  // Rotate 90 (bit 1)
+            if (rot & 0x02) flags |= 0x04;  // Y mirror (bit 2)
+            if (rot & 0x01) flags |= 0x08;  // X mirror (bit 3)
+            sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern, flags);
         }
     }
 

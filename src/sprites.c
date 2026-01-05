@@ -153,7 +153,7 @@ void sprites_upload_patterns(void) {
     }
 }
 
-// Set sprite attributes (8-bit mode)
+// Set sprite attributes (5-byte mode for 8-bit sprites)
 void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t flags) {
     // Adjust coordinates for sprite offset (sprites are positioned from 32,32)
     x += 32;
@@ -162,21 +162,36 @@ void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t fla
     // Select sprite attribute slot
     z80_outp(SPRITE_SLOT_PORT, slot);
 
-    // Write attribute bytes (5 bytes for 8-bit sprites)
-    // Byte 4: H=N6 for pattern, bits 6,5=00 for 8-bit mode
+    // Write 5-byte sprite attributes (required for 8-bit sprites)
+    // Byte 2: PPPP XM YM R X8
+    //   Bits 7-4: Palette offset (0)
+    //   Bit 3: X mirror
+    //   Bit 2: Y mirror
+    //   Bit 1: Rotate 90
+    //   Bit 0: X coordinate bit 8
+    // Byte 3: V E N5-N0
+    //   Bit 7: Visible
+    //   Bit 6: E=1 for 5-byte mode
+    //   Bits 5-0: Pattern number
+    // Byte 4: H N6 T XX YY 0
+    //   Bit 7: H (pattern bit 7)
+    //   Bit 6: N6 (pattern bit 6)
+    //   Bit 5: T=0 for 8-bit sprites
+    //   Bits 4-1: scaling (0 = 1x)
+    //   Bit 0: sprite type
     z80_outp(SPRITE_ATTR_PORT, x & 0xFF);           // Byte 0: X low byte
     z80_outp(SPRITE_ATTR_PORT, y & 0xFF);           // Byte 1: Y low byte
-    z80_outp(SPRITE_ATTR_PORT, (x >> 8) | flags);   // Byte 2: X MSB, palette offset, mirror, rotate
-    z80_outp(SPRITE_ATTR_PORT, 0xC0 | (pattern & 0x3F));  // Byte 3: Visible + enable byte4 + pattern[5:0]
-    z80_outp(SPRITE_ATTR_PORT, (pattern & 0x40) << 1);    // Byte 4: 8-bit mode (N6=0,T=0) + H from pattern bit 6
+    z80_outp(SPRITE_ATTR_PORT, ((x >> 8) & 0x01) | flags);  // Byte 2: X MSB + rotation/mirror
+    z80_outp(SPRITE_ATTR_PORT, 0xC0 | (pattern & 0x3F));    // Byte 3: Visible, E=1, pattern[5:0]
+    z80_outp(SPRITE_ATTR_PORT, (pattern & 0x40) << 1);      // Byte 4: N6->bit7, T=0 (8-bit)
 }
 
-// Hide a sprite
+// Hide a sprite (5-byte mode)
 void sprite_hide(uint8_t slot) {
     z80_outp(SPRITE_SLOT_PORT, slot);
     z80_outp(SPRITE_ATTR_PORT, 0);
     z80_outp(SPRITE_ATTR_PORT, 0);
     z80_outp(SPRITE_ATTR_PORT, 0);
     z80_outp(SPRITE_ATTR_PORT, 0);  // Invisible (bit 7 = 0)
-    z80_outp(SPRITE_ATTR_PORT, 0);  // Byte 4 for 8-bit mode
+    z80_outp(SPRITE_ATTR_PORT, 0);  // Byte 4
 }
