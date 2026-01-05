@@ -62,8 +62,30 @@ static void tilemap_define_tiles(void) {
     }
 }
 
+// ZX Spectrum classic colors in RGB332 format
+static const uint8_t zx_colors[16] = {
+    0x00,  // 0: Black
+    0x02,  // 1: Blue
+    0xC0,  // 2: Red
+    0xC2,  // 3: Magenta
+    0x18,  // 4: Green
+    0x1A,  // 5: Cyan
+    0xD8,  // 6: Yellow
+    0xDA,  // 7: White
+    0x00,  // 8: Bright Black
+    0x03,  // 9: Bright Blue
+    0xE0,  // 10: Bright Red
+    0xE7,  // 11: Bright Magenta (avoid 0xE3 transparency)
+    0x1C,  // 12: Bright Green
+    0x1F,  // 13: Bright Cyan
+    0xFC,  // 14: Bright Yellow
+    0xFF   // 15: Bright White
+};
+
 // Set up tilemap palette
 static void tilemap_setup_palette(void) {
+    uint8_t i;
+
     // Select tilemap palette 0 for writing
     // From z88dk pattern: ULA=0x00, Layer2=0x10, Sprites=0x20, Tilemap=0x30
     IO_NEXTREG_REG = 0x43;
@@ -73,14 +95,13 @@ static void tilemap_setup_palette(void) {
     IO_NEXTREG_REG = 0x40;
     IO_NEXTREG_DAT = 0;
 
-    // Write palette colors (RGB332)
+    // Write ZX Spectrum colors to indices 0-15
     IO_NEXTREG_REG = 0x41;
-    IO_NEXTREG_DAT = 0xE0;  // 0: Red (will be transparent)
-    IO_NEXTREG_DAT = 0xE3;  // 1: Magenta
-    IO_NEXTREG_DAT = 0xFF;  // 2: White
-    IO_NEXTREG_DAT = 0xFC;  // 3: Yellow
+    for (i = 0; i < 16; i++) {
+        IO_NEXTREG_DAT = zx_colors[i];
+    }
 
-    // Reset palette control to ULA, ULANext disabled
+    // Reset palette control to ULA
     IO_NEXTREG_REG = 0x43;
     IO_NEXTREG_DAT = 0x00;
 }
