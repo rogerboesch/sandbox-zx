@@ -1,6 +1,6 @@
 /*
  * Dark Nebula - ZX Spectrum Next Prototype
- * sprites.c - Sprite handling and Layer 2 graphics
+ * sprites.c - Sprite handling
  */
 
 #include <arch/zxn.h>
@@ -11,14 +11,12 @@
 #include "sprite_def.h"
 
 // ZX Spectrum Next I/O ports
-#define LAYER2_ACCESS_PORT    0x123B
 #define SPRITE_SLOT_PORT      0x303B
 #define SPRITE_ATTR_PORT      0x57
 #define SPRITE_PATTERN_PORT   0x5B
 
-// Next register values (using literal values to avoid conflicts with z88dk)
+// Next register values
 #define NEXTREG_SPRITE_SYSTEM  0x15
-#define NEXTREG_LAYER2_CTRL    0x70
 
 // 16x16 sprite patterns (256 bytes each, 8-bit per pixel)
 // Palette indices 0-15 are ZX Spectrum colors, 0xE3 is transparent
@@ -46,12 +44,6 @@
 static void nextreg_write(uint8_t reg, uint8_t val) {
     IO_NEXTREG_REG = reg;
     IO_NEXTREG_DAT = val;
-}
-
-// Read from Next register
-static uint8_t nextreg_read(uint8_t reg) {
-    IO_NEXTREG_REG = reg;
-    return IO_NEXTREG_DAT;
 }
 
 // ZX Spectrum palette colors in RGB332 format
@@ -200,76 +192,4 @@ void sprite_hide(uint8_t slot) {
     z80_outp(SPRITE_ATTR_PORT, 0);
     z80_outp(SPRITE_ATTR_PORT, 0);  // Invisible (bit 7 = 0)
     z80_outp(SPRITE_ATTR_PORT, 0);  // Byte 4 for 8-bit mode
-}
-
-// Layer 2 functions
-// Enable Layer 2 and map it for writing
-static void layer2_enable(void) {
-    nextreg_write(NEXTREG_LAYER2_CTRL, 0x00);
-    z80_outp(LAYER2_ACCESS_PORT, 0x03);  // Enable Layer 2 + write enable
-}
-
-// Clear Layer 2 with a color
-void layer2_clear(uint8_t color) {
-    uint8_t bank;
-    uint16_t i;
-    uint8_t *ptr;
-
-    // Layer 2 is in banks 8, 9, 10 (256x192 @ 8bpp = 48KB)
-    for (bank = 0; bank < 3; bank++) {
-        // Map Layer 2 bank to slot 2 (0x4000-0x7FFF)
-        z80_outp(LAYER2_ACCESS_PORT, 0x03 | (bank << 6));
-
-        ptr = (uint8_t *)0x4000;
-        for (i = 0; i < 16384; i++) {
-            *ptr++ = color;
-        }
-    }
-
-    // Reset to normal operation
-    z80_outp(LAYER2_ACCESS_PORT, 0x02);
-}
-
-// Plot a pixel on Layer 2
-void layer2_plot(uint8_t x, uint8_t y, uint8_t color) {
-    uint8_t bank;
-    uint8_t *ptr;
-
-    if (y >= 192) return;
-
-    // Determine which bank (each bank = 64 lines)
-    bank = y / 64;
-
-    // Map the appropriate Layer 2 bank
-    z80_outp(LAYER2_ACCESS_PORT, 0x03 | (bank << 6));
-
-    // Calculate address within the bank
-    ptr = (uint8_t *)0x4000 + ((y % 64) * 256) + x;
-    *ptr = color;
-}
-
-// Draw horizontal line
-void layer2_hline(uint8_t x1, uint8_t x2, uint8_t y, uint8_t color) {
-    uint8_t x;
-    for (x = x1; x <= x2; x++) {
-        layer2_plot(x, y, color);
-    }
-}
-
-// Draw vertical line
-void layer2_vline(uint8_t x, uint8_t y1, uint8_t y2, uint8_t color) {
-    uint8_t y;
-    for (y = y1; y <= y2; y++) {
-        layer2_plot(x, y, color);
-    }
-}
-
-// Fill rectangle
-void layer2_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
-    uint8_t i, j;
-    for (j = 0; j < h; j++) {
-        for (i = 0; i < w; i++) {
-            layer2_plot(x + i, y + j, color);
-        }
-    }
 }

@@ -47,10 +47,6 @@
 #define SHAKE_DURATION      20   // Frames of screen shake
 #define CRASH_TEXT_DURATION 60   // Frames to show "CRASH"
 
-// Star field constants
-#define MAX_STARS       40
-#define STAR_LAYERS     3
-
 // Sprite pattern slots
 #define SPRITE_PLAYER   0
 #define SPRITE_BULLET   1
@@ -142,24 +138,6 @@ void game_update_bullets(void);
 void game_fire_bullet(void);
 int8_t game_get_shake_offset(void);
 
-// Function prototypes - sprites.c
-void sprites_init(void);
-void sprites_upload_patterns(void);
-void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t flags);
-void sprite_hide(uint8_t slot);
-
-// Layer 2 graphics functions
-void layer2_clear(uint8_t color);
-void layer2_plot(uint8_t x, uint8_t y, uint8_t color);
-void layer2_hline(uint8_t x1, uint8_t x2, uint8_t y, uint8_t color);
-void layer2_vline(uint8_t x, uint8_t y1, uint8_t y2, uint8_t color);
-void layer2_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
-
-// Star field functions
-void stars_init(void);
-void stars_update(void);
-void stars_render(void);
-
 // Input handling
 uint8_t input_read(void);
 
@@ -175,7 +153,6 @@ uint8_t input_read(void);
 extern Player player;
 extern Entity bullets[MAX_BULLETS];
 extern Entity enemies[MAX_ENEMIES];
-extern Star stars[MAX_STARS];
 extern GameData game;
 
 #endif // GAME_H

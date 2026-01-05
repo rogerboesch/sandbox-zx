@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "game.h"
+#include "sprites.h"
 #include "layer2.h"
 #include "tilemap.h"
 

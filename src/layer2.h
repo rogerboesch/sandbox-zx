@@ -19,4 +19,11 @@ void layer2_disable(void);
 void layer2_scroll(int16_t offset_y);
 void layer2_scroll_x(int16_t offset_x);
 
+// Drawing functions
+void layer2_clear(uint8_t color);
+void layer2_plot(uint8_t x, uint8_t y, uint8_t color);
+void layer2_hline(uint8_t x1, uint8_t x2, uint8_t y, uint8_t color);
+void layer2_vline(uint8_t x, uint8_t y1, uint8_t y2, uint8_t color);
+void layer2_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color);
+
 #endif // LAYER2_H

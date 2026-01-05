@@ -69,3 +69,68 @@ void layer2_scroll_x(int16_t offset_x) {
     IO_NEXTREG_REG = 0x16;
     IO_NEXTREG_DAT = (uint8_t)(offset_x & 0xFF);
 }
+
+// Clear Layer 2 with a color
+void layer2_clear(uint8_t color) {
+    uint8_t bank;
+    uint16_t i;
+    uint8_t *ptr;
+
+    // Layer 2 is in banks 8, 9, 10 (256x192 @ 8bpp = 48KB)
+    for (bank = 0; bank < 3; bank++) {
+        // Map Layer 2 bank to slot (0x0000-0x3FFF)
+        z80_outp(LAYER2_PORT, 0x03 | (bank << 6));
+
+        ptr = (uint8_t *)0x0000;
+        for (i = 0; i < 16384; i++) {
+            *ptr++ = color;
+        }
+    }
+
+    // Reset to normal operation
+    z80_outp(LAYER2_PORT, 0x02);
+}
+
+// Plot a pixel on Layer 2
+void layer2_plot(uint8_t x, uint8_t y, uint8_t color) {
+    uint8_t bank;
+    uint8_t *ptr;
+
+    if (y >= 192) return;
+
+    // Determine which bank (each bank = 64 lines)
+    bank = y / 64;
+
+    // Map the appropriate Layer 2 bank
+    z80_outp(LAYER2_PORT, 0x03 | (bank << 6));
+
+    // Calculate address within the bank
+    ptr = (uint8_t *)0x0000 + ((y % 64) * 256) + x;
+    *ptr = color;
+}
+
+// Draw horizontal line
+void layer2_hline(uint8_t x1, uint8_t x2, uint8_t y, uint8_t color) {
+    uint8_t x;
+    for (x = x1; x <= x2; x++) {
+        layer2_plot(x, y, color);
+    }
+}
+
+// Draw vertical line
+void layer2_vline(uint8_t x, uint8_t y1, uint8_t y2, uint8_t color) {
+    uint8_t y;
+    for (y = y1; y <= y2; y++) {
+        layer2_plot(x, y, color);
+    }
+}
+
+// Fill rectangle
+void layer2_fill_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t color) {
+    uint8_t i, j;
+    for (j = 0; j < h; j++) {
+        for (i = 0; i < w; i++) {
+            layer2_plot(x + i, y + j, color);
+        }
+    }
+}
