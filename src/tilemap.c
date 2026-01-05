@@ -1,7 +1,9 @@
 #include <arch/zxn.h>
 #include <z80.h>
 #include <stdint.h>
+#include <string.h>
 #include "tilemap.h"
+#include "tiles.h"
 
 // Tilemap registers
 #define REG_TILEMAP_CTRL     0x6B
@@ -18,83 +20,17 @@
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
 
-// Tile indices
-#define TILE_TRANS       0
-#define TILE_ROAD        1   // Black road (solid)
-#define TILE_DASH        2   // Road with white center dash
-#define TILE_BORDER_L    3   // Left edge with cyan border
-#define TILE_BORDER_R    4   // Right edge with cyan border
-#define TILE_BORDER_L_D  5   // Left edge with dash
-#define TILE_BORDER_R_D  6   // Right edge with dash
-
-// Palette index for non-transparent black
-#define PAL_BLACK  8u
-
 // Scroll state
 int16_t scroll_y = 0;
 
-// Define 8x8 tile patterns (4-bit = 32 bytes each)
-// Each byte = 2 pixels, X-major order
-// Palette: 0=transparent, 5=cyan, 7=white, 8=black (non-transparent)
+// Copy tile definitions from ROM to tilemap memory
 static void tilemap_define_tiles(void) {
-    uint8_t *tiles = (uint8_t *)TILES_ADDR;
-    uint8_t i, row, col;
+    uint8_t *dest = (uint8_t *)TILES_ADDR;
+    uint8_t i;
 
-    // Tile 0: Transparent (palette index 0)
-    for (i = 0; i < 32; i++) {
-        tiles[i] = 0x00;
-    }
-    tiles += 32;
-
-    // Tile 1: Solid black road
-    for (i = 0; i < 32; i++) {
-        tiles[i] = (PAL_BLACK << 4) | PAL_BLACK;
-    }
-    tiles += 32;
-
-    // Tile 2: Black road with white center dash (rows 3-4)
-    for (row = 0; row < 8; row++) {
-        uint8_t color = (row >= 3 && row <= 4) ? 7 : PAL_BLACK;
-        for (col = 0; col < 4; col++) {
-            tiles[row * 4 + col] = (color << 4) | color;
-        }
-    }
-    tiles += 32;
-
-    // Tile 3: Left border (cyan on left edge, black rest)
-    for (row = 0; row < 8; row++) {
-        // First byte: cyan + black, rest: black + black
-        tiles[row * 4 + 0] = (5 << 4) | PAL_BLACK;
-        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 3] = (PAL_BLACK << 4) | PAL_BLACK;
-    }
-    tiles += 32;
-
-    // Tile 4: Right border (black, cyan on right edge)
-    for (row = 0; row < 8; row++) {
-        tiles[row * 4 + 0] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 3] = (PAL_BLACK << 4) | 5;
-    }
-    tiles += 32;
-
-    // Tile 5: Left border (same as tile 3, no dash on edges)
-    for (row = 0; row < 8; row++) {
-        tiles[row * 4 + 0] = (5 << 4) | PAL_BLACK;
-        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 3] = (PAL_BLACK << 4) | PAL_BLACK;
-    }
-    tiles += 32;
-
-    // Tile 6: Right border (same as tile 4, no dash on edges)
-    for (row = 0; row < 8; row++) {
-        tiles[row * 4 + 0] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 1] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 2] = (PAL_BLACK << 4) | PAL_BLACK;
-        tiles[row * 4 + 3] = (PAL_BLACK << 4) | 5;
+    for (i = 0; i < NUM_TILES; i++) {
+        memcpy(dest, tile_defs[i], 32);
+        dest += 32;
     }
 }
 
