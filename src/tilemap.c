@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "tilemap.h"
-#include "tiles.h"
+#include "tile_def.h"
 
 // Tilemap registers
 #define REG_TILEMAP_CTRL     0x6B
