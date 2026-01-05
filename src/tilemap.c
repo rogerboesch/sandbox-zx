@@ -158,7 +158,12 @@ void tilemap_init(void) {
 // Enable tilemap display
 void tilemap_enable(void) {
     IO_NEXTREG_REG = REG_TILEMAP_CTRL;
-    IO_NEXTREG_DAT = 0x80;  // Enable tilemap, 40x32, 4-bit tiles
+    // Bit 7: Enable tilemap
+    // Bit 6: Tilemap over Layer 2 (1 = tilemap on top of Layer 2)
+    // Bit 5: 0 = 40x32, 1 = 80x32
+    // Bit 4: 0 = 8-bit tiles, 1 = 4-bit tiles (we use 4-bit)
+    // Bit 0: Enable palette index 0 as transparent
+    IO_NEXTREG_DAT = 0xD1;  // Enable, over Layer2, 40x32, 4-bit, transparent index 0
 }
 
 // Disable tilemap display

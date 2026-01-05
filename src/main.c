@@ -72,8 +72,8 @@ static void init_next(void) {
 
 // Enable gameplay graphics
 static void enable_gameplay(void) {
-    // layer2_enable();      // DISABLED FOR TESTING
-    // tilemap_enable();     // DISABLED FOR TESTING
+    layer2_enable();
+    tilemap_enable();
     set_layers_gameplay();
 }
 
