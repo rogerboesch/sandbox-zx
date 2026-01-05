@@ -2,17 +2,58 @@
 #include <z80.h>
 #include <stdint.h>
 #include "layer2.h"
+#include "tiles.h"
 
 // Layer 2 uses 8K banks 16-21 (6 banks x 8K = 48K for 256x192x8bpp)
 // We'll use MMU slot 2 (0x4000-0x5FFF) for writing
 #define MMU_SLOT2_REG  0x52
 
-// Draw blue grid to one 8K bank of Layer 2
+// Layer 2 background tiles (2x2 block from tilemap)
+// Positions: (0,1), (1,1), (0,2), (1,2)
+#define L2_TILE_TL  tile_01  // top-left
+#define L2_TILE_TR  tile_11  // top-right
+#define L2_TILE_BL  tile_02  // bottom-left
+#define L2_TILE_BR  tile_12  // bottom-right
+
+// ZX Spectrum colors in RGB332 for Layer 2
+static const uint8_t zx_to_rgb332[16] = {
+    0x00,  // 0: Black
+    0x02,  // 1: Blue
+    0xC0,  // 2: Red
+    0xC2,  // 3: Magenta
+    0x18,  // 4: Green
+    0x1A,  // 5: Cyan
+    0xD8,  // 6: Yellow
+    0xDA,  // 7: White
+    0x00,  // 8: Bright Black
+    0x03,  // 9: Bright Blue
+    0xE0,  // 10: Bright Red
+    0xE3,  // 11: Bright Magenta
+    0x1C,  // 12: Bright Green
+    0x1F,  // 13: Bright Cyan
+    0xFC,  // 14: Bright Yellow
+    0xFF   // 15: Bright White
+};
+
+// Get pixel from 4-bit tile data
+static uint8_t get_tile_pixel(const uint8_t *tile, uint8_t px, uint8_t py) {
+    uint8_t byte = tile[py * 4 + (px >> 1)];
+    if (px & 1) {
+        return byte & 0x0F;  // Low nibble (right pixel)
+    } else {
+        return byte >> 4;    // High nibble (left pixel)
+    }
+}
+
+// Draw 2x2 tile pattern to one 8K bank of Layer 2
 static void layer2_draw_8k_bank(uint8_t l2_bank, uint8_t start_y) {
     uint8_t y;
     uint16_t x;
     uint8_t *row;
-    uint8_t world_y, tile_y, tile_x;
+    uint8_t world_y, block_y, block_x;
+    uint8_t tile_px, tile_py;
+    const uint8_t *tile;
+    uint8_t pal_idx;
     uint8_t old_bank;
 
     // Save current MMU slot 2 bank
@@ -27,15 +68,26 @@ static void layer2_draw_8k_bank(uint8_t l2_bank, uint8_t start_y) {
     for (y = 0; y < 32; y++) {
         world_y = start_y + y;
         row = (uint8_t *)(0x4000 + y * 256);
-        tile_y = world_y & 0x0F;
+
+        // Which row in the 16x16 block (0-15)?
+        block_y = world_y & 0x0F;
+        tile_py = block_y & 0x07;  // Pixel row within 8x8 tile
 
         for (x = 0; x < 256; x++) {
-            tile_x = x & 0x0F;
-            if (tile_x == 0 || tile_x == 15 || tile_y == 0 || tile_y == 15) {
-                row[x] = 0x03;  // Blue border
+            // Which column in the 16x16 block (0-15)?
+            block_x = x & 0x0F;
+            tile_px = block_x & 0x07;  // Pixel col within 8x8 tile
+
+            // Select tile from 2x2 block
+            if (block_y < 8) {
+                tile = (block_x < 8) ? L2_TILE_TL : L2_TILE_TR;
             } else {
-                row[x] = 0x00;  // Black inside
+                tile = (block_x < 8) ? L2_TILE_BL : L2_TILE_BR;
             }
+
+            // Get palette index and convert to RGB332
+            pal_idx = get_tile_pixel(tile, tile_px, tile_py);
+            row[x] = zx_to_rgb332[pal_idx];
         }
     }
 
