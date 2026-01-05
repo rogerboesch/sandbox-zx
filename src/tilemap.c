@@ -11,14 +11,12 @@
 #define REG_TILEMAP_TRANS    0x4C
 #define REG_TILEMAP_XSCROLL  0x2F
 #define REG_TILEMAP_YSCROLL  0x31
-#define MY_REG_MMU6          0x56
-#define MY_REG_MMU7          0x57
 
-// Use bank 10 for tilemap data, mapped to 0xC000-0xDFFF via MMU slot 6
-// Tilemap at offset 0 (0xC000 when mapped), tiles at 0x600 (0xC600 when mapped)
-#define TILEMAP_BANK    10
-#define TILEMAP_OFFSET  0xC000
-#define TILES_OFFSET    0xC600
+// Use upper bank 5 area for tilemap (after ULA attributes at 0x5B00)
+// Tilemap data at 0x6000 (40x32 = 1280 bytes with 8-bit entries)
+// Tile definitions at 0x6600 (need 32 bytes per tile for 4-bit 8x8)
+#define TILEMAP_ADDR    0x6000
+#define TILES_ADDR      0x6600
 
 // Tile indices
 #define TILE_TRANS    0
@@ -30,7 +28,8 @@ int16_t scroll_y = 0;
 
 // Define 8x8 tile patterns (4-bit = 32 bytes each)
 // Each byte = 2 pixels, X-major order
-static void tilemap_define_tiles(uint8_t *tiles) {
+static void tilemap_define_tiles(void) {
+    uint8_t *tiles = (uint8_t *)TILES_ADDR;
     uint8_t i;
 
     // Tile 0: Transparent (palette index 0)
@@ -83,26 +82,25 @@ static void tilemap_setup_palette(void) {
 
     // Select tilemap palette 0 for writing
     // From z88dk pattern: ULA=0x00, Layer2=0x10, Sprites=0x20, Tilemap=0x30
-    IO_NEXTREG_REG = 0x43;
-    IO_NEXTREG_DAT = 0x30;
+    ZXN_NEXTREG(0x43, 0x30);
 
     // Start at index 0
-    IO_NEXTREG_REG = 0x40;
-    IO_NEXTREG_DAT = 0;
+    ZXN_NEXTREG(0x40, 0);
 
     // Write ZX Spectrum colors to indices 0-15
+    // Index 0 will be our transparent color (set to any value, transparency is via reg 0x4C)
     IO_NEXTREG_REG = 0x41;
     for (i = 0; i < 16; i++) {
         IO_NEXTREG_DAT = zx_colors[i];
     }
 
     // Reset palette control to ULA
-    IO_NEXTREG_REG = 0x43;
-    IO_NEXTREG_DAT = 0x00;
+    ZXN_NEXTREG(0x43, 0x00);
 }
 
 // Fill tilemap - highway in center, transparent elsewhere
-static void tilemap_fill(uint8_t *tmap) {
+static void tilemap_fill(void) {
+    uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
 
     // 40 columns x 32 rows (8x8 tiles = 320x256 pixels, but only 256x192 visible)
@@ -128,67 +126,59 @@ static void tilemap_fill(uint8_t *tmap) {
 
 // Initialize tilemap
 void tilemap_init(void) {
-    uint8_t old_bank6;
+    // Define tile patterns at 0x6600
+    tilemap_define_tiles();
 
-    // Save old MMU6 bank
-    IO_NEXTREG_REG = MY_REG_MMU6;
-    old_bank6 = IO_NEXTREG_DAT;
-
-    // Map bank 10 to slot 6 (0xC000-0xDFFF)
-    IO_NEXTREG_REG = MY_REG_MMU6;
-    IO_NEXTREG_DAT = TILEMAP_BANK;
-
-    // Define tile patterns
-    tilemap_define_tiles((uint8_t *)TILES_OFFSET);
-
-    // Fill tilemap data
-    tilemap_fill((uint8_t *)TILEMAP_OFFSET);
-
-    // Restore old MMU6 bank
-    IO_NEXTREG_REG = MY_REG_MMU6;
-    IO_NEXTREG_DAT = old_bank6;
+    // Fill tilemap data at 0x6000
+    tilemap_fill();
 
     // Set up palette
     tilemap_setup_palette();
 
     // Set tilemap base address
-    // Bank 10 = 8K bank, physical address = 10 * 0x2000 = 0x14000
-    // Register 0x6E: bits 5:0 = A13-A18 of tilemap address
-    // 0x14000 = 0b0001_0100_0000_0000_0000
-    // A13-A18 = bits 13-18 = 0b001010 = 10 (the bank number!)
-    // But we also need to account for offset within bank
-    // Tilemap is at start of bank, so just the bank * 2
-    IO_NEXTREG_REG = REG_TILEMAP_BASE;
-    IO_NEXTREG_DAT = TILEMAP_BANK * 2;  // 10 * 2 = 20 = 0x14
+    // Register expects MSB of offset from 0x4000 (bank 5 start)
+    // For address 0x6000: offset = 0x6000 - 0x4000 = 0x2000, MSB = 0x20
+    ZXN_NEXTREG(REG_TILEMAP_BASE, 0x20);
 
     // Set tile definitions address
-    // Tiles at 0x14600 (bank 10 + 0x600 offset)
-    // A13-A18 of 0x14600 = same calculation, 0x14600 >> 13 = 10, plus offset
-    IO_NEXTREG_REG = REG_TILEMAP_TILES;
-    IO_NEXTREG_DAT = (TILEMAP_BANK * 2) + (6 >> 5);  // ~0x14
-
-    // Transparency color register
-    IO_NEXTREG_REG = REG_TILEMAP_TRANS;
-    IO_NEXTREG_DAT = 0x00;
+    // For address 0x6600: offset = 0x6600 - 0x4000 = 0x2600, MSB = 0x26
+    ZXN_NEXTREG(REG_TILEMAP_TILES, 0x26);
 
     // Default attribute (palette offset 0, no mirror/rotate)
-    IO_NEXTREG_REG = REG_TILEMAP_ATTR;
-    IO_NEXTREG_DAT = 0x00;
+    ZXN_NEXTREG(REG_TILEMAP_ATTR, 0x00);
+
+    // Set tilemap transparency: palette index 0 is transparent
+    // Register 0x4C controls tilemap transparency
+    // Bits 3:0 = transparent palette index (0 = index 0 is transparent)
+    // When a pixel has this palette index, it shows through to layer below
+    ZXN_NEXTREG(REG_TILEMAP_TRANS, 0x00);
 
     // Tilemap starts disabled
 }
 
 // Enable tilemap display
 void tilemap_enable(void) {
-    // DISABLED FOR DEBUGGING - tilemap not working correctly
-    // IO_NEXTREG_REG = REG_TILEMAP_CTRL;
-    // IO_NEXTREG_DAT = 0xA0;
+    // Reg 0x6B Tilemap Control:
+    // Bit 7: Enable tilemap (1)
+    // Bit 6: 0=40x32, 1=80x32 (0)
+    // Bit 5: 1=8-bit tilemap entries (1)
+    // Bit 4: Palette select (0 = first palette)
+    // Bit 3: Text mode (0 = tile mode)
+    // Bit 2: Reserved (0)
+    // Bit 1: 512 tile mode (0)
+    // Bit 0: Tilemap over ULA (0 = tilemap under ULA)
+    ZXN_NEXTREG(REG_TILEMAP_CTRL, 0xA0);  // Enable, 40x32, 8-bit entries
+
+    // Reg 0x6C Default Tilemap Attribute:
+    // For 8-bit entries, this provides palette offset and flags
+    // Bit 4: X mirror, Bit 3: Y mirror, Bit 2: Rotate, Bits 7-5,1-0: palette offset
+    // We want no transformations and palette offset 0
+    ZXN_NEXTREG(REG_TILEMAP_ATTR, 0x00);
 }
 
 // Disable tilemap display
 void tilemap_disable(void) {
-    IO_NEXTREG_REG = REG_TILEMAP_CTRL;
-    IO_NEXTREG_DAT = 0x00;
+    ZXN_NEXTREG(REG_TILEMAP_CTRL, 0x00);
 }
 
 // Scroll tilemap vertically (highway - full speed)
@@ -198,29 +188,36 @@ void tilemap_scroll(int16_t offset_y) {
 }
 
 // Set layer priority for gameplay
-// ULA on top (for HUD text), then Sprites, Layer2, Tilemap at back
+// From top to bottom: ULA > Sprites > Tilemap > Layer2
 void set_layers_gameplay(void) {
     // Register 0x15: Sprite and Layers System
-    // Bits 4-2: Layer priority
+    // Bits 4-2: Layer priority (S=Sprites, L=Layer2, U=ULA+Tilemap)
     //   000 = S L U, 001 = L S U, 010 = S U L, 011 = L U S
     //   100 = U S L, 101 = U L S
-    // We want ULA on top: U S L = 100
+    // Bit 7: Enable lo-res mode (0)
+    // Bit 6: Sprite priority (0 = sprite 127 on top)
+    // Bit 5: Enable sprite clipping in over-border mode (0)
     // Bit 1: Sprites over border
     // Bit 0: Sprites visible
-    IO_NEXTREG_REG = 0x15;
-    IO_NEXTREG_DAT = 0x13;  // 0b00010011 = U S L order, sprites visible and over border
+    //
+    // We want: Sprites above Tilemap, Layer 2 at bottom
+    // Use S U L = 010 which gives: Sprites on top, then ULA/Tilemap, then Layer2
+    // 010 in bits 4:2 = 0b00001000 = 0x08
+    // Add sprites visible (0x01) and over border (0x02) = 0x0B
+    ZXN_NEXTREG(0x15, 0x0B);  // 0b00001011 = S U L order, sprites visible and over border
 
     // Register 0x14: Global Transparency Color
     // Set ULA paper black (0x00) as transparent color
     // This makes ULA black areas show-through to layers below
-    IO_NEXTREG_REG = 0x14;
-    IO_NEXTREG_DAT = 0x00;  // Black is transparent
+    ZXN_NEXTREG(0x14, 0x00);  // Black is transparent
+
+    // Tilemap is under ULA (reg 0x6B bit 0 = 0)
+    // So final order: Sprites > ULA > Tilemap > Layer2
 }
 
 // Set layer priority for menus (ULA only, no sprites)
 void set_layers_menu(void) {
     // U L S order (101) - ULA on top
     // Bit 0 = 0 (sprites disabled)
-    IO_NEXTREG_REG = 0x15;
-    IO_NEXTREG_DAT = 0x14;  // 0b00010100 = U L S, no sprites
+    ZXN_NEXTREG(0x15, 0x14);  // 0b00010100 = U L S, no sprites
 }
