@@ -64,11 +64,10 @@ static void tilemap_define_tiles(void) {
 
 // Set up tilemap palette
 static void tilemap_setup_palette(void) {
-    // Select tilemap palette, auto-increment
-    // Palette select: 000=ULA, 010=Layer2, 100=Sprites, 110=Tilemap
-    // Tilemap first palette: bits 3-1 = 110 -> 0b00001100 = 0x0C
+    // Select tilemap palette 0 for writing
+    // From z88dk pattern: ULA=0x00, Layer2=0x10, Sprites=0x20, Tilemap=0x30
     IO_NEXTREG_REG = 0x43;
-    IO_NEXTREG_DAT = 0x0C;
+    IO_NEXTREG_DAT = 0x30;
 
     // Start at index 0
     IO_NEXTREG_REG = 0x40;
@@ -118,7 +117,7 @@ void tilemap_init(void) {
     tilemap_define_tiles();
 
     // Set up palette
-    // tilemap_setup_palette();  // DISABLED FOR TESTING
+    tilemap_setup_palette();
 
     // Fill tilemap data
     tilemap_fill();
