@@ -1,10 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * tilemap.c - Tilemap Layer (Highway)
- *
- * Tilemap is the middle layer showing the highway at full scroll speed
- */
-
 #include <arch/zxn.h>
 #include <z80.h>
 #include <stdint.h>

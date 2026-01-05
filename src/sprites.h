@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * sprites.h - Sprite handling
- */
-
 #ifndef SPRITES_H
 #define SPRITES_H
 

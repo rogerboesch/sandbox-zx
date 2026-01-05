@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * tilemap.h - Tilemap Layer (Highway)
- */
-
 #ifndef TILEMAP_H
 #define TILEMAP_H
 

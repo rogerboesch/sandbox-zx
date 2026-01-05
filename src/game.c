@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next Prototype
- * game.c - Core game logic
- */
-
 #include <arch/zxn.h>
 #include <z80.h>
 #include <input.h>

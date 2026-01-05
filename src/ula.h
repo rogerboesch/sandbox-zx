@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * ula.h - ULA Screen Text Functions
- */
-
 #ifndef ULA_H
 #define ULA_H
 

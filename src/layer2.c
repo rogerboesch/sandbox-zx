@@ -1,10 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * layer2.c - Layer 2 Background Graphics
- *
- * Layer 2 is the back layer showing a blue grid parallax background
- */
-
 #include <arch/zxn.h>
 #include <z80.h>
 #include <stdint.h>

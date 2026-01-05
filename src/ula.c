@@ -1,10 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * ula.c - ULA Screen Text Functions
- *
- * ULA is used for title screen and game over text
- */
-
 #include <stdint.h>
 #include <string.h>
 #include "ula.h"

@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next Prototype
- * game.h - Game constants, types, and function prototypes
- */
-
 #ifndef GAME_H
 #define GAME_H
 

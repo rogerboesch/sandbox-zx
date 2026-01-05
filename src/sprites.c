@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next Prototype
- * sprites.c - Sprite handling
- */
-
 #include <arch/zxn.h>
 #include <z80.h>
 #include <intrinsic.h>

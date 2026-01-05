@@ -1,13 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next Prototype
- * main.c - Entry point and main loop
- *
- * Controls:
- *   Q = Up, A = Down, O = Left, P = Right
- *   Space = Fire
- *   Kempston joystick supported
- */
-
 #include <arch/zxn.h>
 #include <z80.h>
 #include <intrinsic.h>

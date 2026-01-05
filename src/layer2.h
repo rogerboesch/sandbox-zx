@@ -1,8 +1,3 @@
-/*
- * Dark Nebula - ZX Spectrum Next
- * layer2.h - Layer 2 Background Graphics
- */
-
 #ifndef LAYER2_H
 #define LAYER2_H
 
