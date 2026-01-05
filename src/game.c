@@ -49,6 +49,10 @@ uint8_t input_read(void) {
     keys = z80_inp(0x7FFE);
     if (!(keys & 0x01)) result |= INPUT_FIRE;   // Space
 
+    // Row H-Enter (0xBFFE) - H for pause
+    keys = z80_inp(0xBFFE);
+    if (!(keys & 0x10)) result |= INPUT_PAUSE;  // H
+
     // Also support cursor keys via Kempston joystick port (0x1F)
     keys = z80_inp(0x1F);
     if (keys & 0x08) result |= INPUT_UP;
@@ -364,7 +368,7 @@ int8_t game_get_shake_offset(void) {
 // Render HUD text on ULA
 static void render_hud_text(void) {
     ula_print_at(0, 0, "SCORE", ATTR_WHITE_ON_BLACK);
-    ula_print_num(7, 0, game.score, ATTR_YELLOW_ON_BLACK);
+    ula_print_num(6, 0, game.score, ATTR_YELLOW_ON_BLACK);
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
 }

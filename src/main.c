@@ -133,6 +133,19 @@ int main(void) {
                 break;
 
             case STATE_PLAYING:
+                // Check for pause
+                if ((input & INPUT_PAUSE) && debounce == 0) {
+                    debounce = 15;
+                    game.state = STATE_PAUSED;
+                    ula_print_at(2, 10, " PAUSED ", ATTR_YELLOW_ON_BLACK);
+                    ula_print_at(22, 10, " PAUSED ", ATTR_YELLOW_ON_BLACK);
+                    break;
+                }
+                else {
+                    ula_print_at(2, 10, "        ", ATTR_YELLOW_ON_BLACK);
+                    ula_print_at(22, 10, "        ", ATTR_YELLOW_ON_BLACK);
+                }
+
                 game_update();
                 game_render();
 
@@ -144,6 +157,16 @@ int main(void) {
                 } else {
                     // Normal black border
                     z80_outp(0xFE, 0x00);
+                }
+                break;
+
+            case STATE_PAUSED:
+                // Wait for unpause
+                if ((input & INPUT_PAUSE) && debounce == 0) {
+                    debounce = 15;
+                    game.state = STATE_PLAYING;
+                    // Clear the PAUSED text
+                    ula_print_at(12, 11, "        ", ATTR_WHITE_ON_BLACK);
                 }
                 break;
 
