@@ -289,6 +289,25 @@ void game_update(void) {
     if (player.fire_cooldown > 0) player.fire_cooldown--;
     if (player.invincible > 0) player.invincible--;
 
+    // Check if player left the highway (only if not invincible)
+    // Crash only when more than half the player is outside
+    if (player.invincible == 0) {
+        int16_t player_center = player.x + (PLAYER_WIDTH / 2);
+        if (player_center < HIGHWAY_LEFT || player_center > HIGHWAY_RIGHT) {
+            // Player crashed off highway
+            player.lives--;
+            player.x = PLAYER_START_X;  // Reset to center
+            player.invincible = 120;    // 2 seconds invincibility
+            game.shake_timer = SHAKE_DURATION;
+            game.crash_timer = CRASH_TEXT_DURATION;
+
+            if (player.lives == 0) {
+                game.state = STATE_GAMEOVER;
+                return;
+            }
+        }
+    }
+
     // Update scrolling (vertical scroll - decrement to scroll downward)
     scroll_y -= SCROLL_SPEED;
 

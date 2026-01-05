@@ -136,9 +136,14 @@ int main(void) {
                 game_update();
                 game_render();
 
-                // Apply shake when hit
+                // Apply shake and red border flash when hit
                 if (game.crash_timer > 0) {
                     apply_shake();
+                    // Flash border red (alternate every 4 frames)
+                    z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);
+                } else {
+                    // Normal black border
+                    z80_outp(0xFE, 0x00);
                 }
                 break;
 

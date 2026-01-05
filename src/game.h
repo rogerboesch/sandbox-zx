@@ -13,6 +13,11 @@
 #define GAME_LEFT       0
 #define GAME_RIGHT      240
 
+// Highway boundaries (tiles 16-23 = pixels 128-191, adjusted for tilemap offset)
+// Tilemap is offset by 4 tiles, so highway at tiles 16-23 appears at pixels 96-159
+#define HIGHWAY_LEFT    96
+#define HIGHWAY_RIGHT   160
+
 // Player constants (vertical scroller - player at bottom)
 #define PLAYER_WIDTH    16
 #define PLAYER_HEIGHT   16
