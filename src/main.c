@@ -197,6 +197,4 @@ int main(void) {
 
         if (debounce > 0) debounce--;
     }
-
-    return 0;
 }

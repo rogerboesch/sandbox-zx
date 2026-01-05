@@ -114,8 +114,9 @@ void game_fire_bullet(void) {
     for (i = 0; i < MAX_BULLETS; i++) {
         if (!bullets[i].active) {
             bullets[i].active = 1;
-            bullets[i].x = player.x + (PLAYER_WIDTH / 2) - (BULLET_WIDTH / 2);
-            bullets[i].y = player.y - BULLET_HEIGHT;
+            // Bullet sprite is 16x16, center it on player center
+            bullets[i].x = player.x + (PLAYER_WIDTH / 2) - 8;
+            bullets[i].y = player.y - 16;
             bullets[i].dx = 0;
             bullets[i].dy = -BULLET_SPEED;  // Move upward
             player.fire_cooldown = 8;  // Cooldown frames

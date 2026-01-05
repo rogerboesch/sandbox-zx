@@ -28,7 +28,7 @@
 #define TILE_BORDER_R_D  6   // Right edge with dash
 
 // Palette index for non-transparent black
-#define PAL_BLACK  8
+#define PAL_BLACK  8u
 
 // Scroll state
 int16_t scroll_y = 0;
