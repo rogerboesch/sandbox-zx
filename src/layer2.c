@@ -70,14 +70,13 @@ void layer2_enable(void) {
     // Bit 6: Layer 2 shadow (0 = use bank in reg 0x12)
     // Bits 5-4: Resolution (00 = 256x192)
     // Bits 3-0: Palette offset
-    IO_NEXTREG_REG = 0x69;
-    IO_NEXTREG_DAT = 0x80;  // Enable Layer 2, 256x192
+    ZXN_NEXTREG(0x69, 0x80);  // Enable Layer 2, 256x192
 }
 
 // Disable Layer 2 display
 void layer2_disable(void) {
-    IO_NEXTREG_REG = 0x69;
-    IO_NEXTREG_DAT = 0x00;  // Disable Layer 2
+    // Use ZXN_NEXTREG to ensure proper register write
+    ZXN_NEXTREG(0x69, 0x00);  // Disable Layer 2
 }
 
 // Scroll Layer 2 vertically (parallax background - half speed)

@@ -21,9 +21,9 @@ static void wait_vblank(void) {
 // Draw title screen
 static void draw_title(void) {
     ula_clear();
-    ula_print_at(10, 5,  "DARK NEBULA", ATTR_YELLOW_ON_BLACK);
-    ula_print_at(6, 8,  "ZX SPECTRUM NEXT", ATTR_YELLOW_ON_BLACK);
-    ula_print_at(9, 12, "PRESS FIRE", ATTR_WHITE_ON_BLACK);
+    ula_print_at(6, 5,  "  VOID RUNNER 16", ATTR_YELLOW_ON_BLACK);
+    ula_print_at(6, 8,  " ZX SPECTRUM NEXT", ATTR_YELLOW_ON_BLACK);
+    ula_print_at(6, 12, "PRESS FIRE TO START", ATTR_WHITE_ON_BLACK);
 }
 
 // Draw CRASH text
@@ -33,11 +33,30 @@ static void draw_crash(void) {
 
 // Draw game over screen
 static void draw_gameover(void) {
+    uint8_t score_len = 0;
+    uint16_t s = game.score;
+    uint8_t total_len, x;
+    
     ula_clear();
-    ula_print_at(11, 10, "GAME OVER", ATTR_RED_ON_BLACK);
-    ula_print_at(9, 12, "SCORE:", ATTR_WHITE_ON_BLACK);
-    ula_print_num(16, 12, game.score, ATTR_WHITE_ON_BLACK);
-    ula_print_at(8, 16, "PRESS FIRE", ATTR_WHITE_ON_BLACK);
+    ula_print_at(6, 10, "     GAME OVER", ATTR_RED_ON_BLACK);
+    ula_print_at(6, 16, "PRESS FIRE TO START", ATTR_WHITE_ON_BLACK);
+
+    // Calculate score digit count
+    if (s == 0) {
+        score_len = 1;
+    } else {
+        while (s > 0) {
+            score_len++;
+            s /= 10;
+        }
+    }
+
+    // "SCORE: " is 7 chars + score_len
+    total_len = 7 + score_len;
+    x = (32 - total_len) / 2;
+
+    ula_print_at(x, 12, "SCORE: ", ATTR_WHITE_ON_BLACK);
+    ula_print_num(x + 7, 12, game.score, ATTR_WHITE_ON_BLACK);
 }
 
 // Apply screen shake
@@ -88,7 +107,7 @@ static void disable_gameplay(void) {
 int main(void) {
     uint8_t input;
     uint8_t debounce = 0;
-    uint8_t prev_state = STATE_TITLE;
+    uint8_t gameover_shown = 0;
 
     // Initialize
     init_next();
@@ -109,6 +128,7 @@ int main(void) {
                     ula_clear();
                     enable_gameplay();
                     game_init();
+                    gameover_shown = 0;
                 }
                 break;
 
@@ -124,7 +144,8 @@ int main(void) {
 
             case STATE_GAMEOVER:
                 // Only run setup once when entering this state
-                if (prev_state != STATE_GAMEOVER) {
+                if (!gameover_shown) {
+                    gameover_shown = 1;
                     // Hide all sprites
                     for (uint8_t s = 0; s < 32; s++) {
                         sprite_hide(s);
@@ -138,6 +159,7 @@ int main(void) {
                     ula_clear();
                     enable_gameplay();
                     game_init();
+                    gameover_shown = 0;
                 }
                 break;
 
@@ -145,7 +167,6 @@ int main(void) {
                 break;
         }
 
-        prev_state = game.state;
         if (debounce > 0) debounce--;
     }
 

@@ -11,12 +11,14 @@
 #define REG_TILEMAP_TRANS    0x4C
 #define REG_TILEMAP_XSCROLL  0x2F
 #define REG_TILEMAP_YSCROLL  0x31
+#define MY_REG_MMU6          0x56
+#define MY_REG_MMU7          0x57
 
-// Tilemap: 40x32 tiles, each tile = 1 byte at 0x6000
-#define TILEMAP_BASE_ADDR    0x6000
-
-// Tile patterns: 16x16 4-bit = 128 bytes each at 0x6C00
-#define TILES_BASE_ADDR      0x6C00
+// Use bank 10 for tilemap data, mapped to 0xC000-0xDFFF via MMU slot 6
+// Tilemap at offset 0 (0xC000 when mapped), tiles at 0x600 (0xC600 when mapped)
+#define TILEMAP_BANK    10
+#define TILEMAP_OFFSET  0xC000
+#define TILES_OFFSET    0xC600
 
 // Tile indices
 #define TILE_TRANS    0
@@ -26,31 +28,31 @@
 // Scroll state
 int16_t scroll_y = 0;
 
-// Define 16x16 tile patterns (4-bit = 128 bytes each)
-static void tilemap_define_tiles(void) {
-    uint8_t *tiles = (uint8_t *)TILES_BASE_ADDR;
+// Define 8x8 tile patterns (4-bit = 32 bytes each)
+// Each byte = 2 pixels, X-major order
+static void tilemap_define_tiles(uint8_t *tiles) {
     uint8_t i;
 
     // Tile 0: Transparent (palette index 0)
-    for (i = 0; i < 128; i++) {
-        tiles[i] = 0x00;
+    for (i = 0; i < 32; i++) {
+        tiles[i] = 0x00;  // Two transparent pixels
     }
-    tiles += 128;
+    tiles += 32;
 
-    // Tile 1: Solid magenta (palette index 1)
-    for (i = 0; i < 128; i++) {
-        tiles[i] = 0x11;  // Two pixels of palette index 1
+    // Tile 1: Solid color (palette index 3 = magenta)
+    for (i = 0; i < 32; i++) {
+        tiles[i] = 0x33;  // Two magenta pixels
     }
-    tiles += 128;
+    tiles += 32;
 
     // Tile 2: White dash on magenta (for center line)
-    for (i = 0; i < 128; i++) {
-        // Rows 6-9 are white (palette 2), rest magenta (palette 1)
-        uint8_t row = i / 8;
-        if (row >= 6 && row <= 9) {
-            tiles[i] = 0x22;  // White
+    for (i = 0; i < 32; i++) {
+        // Rows 3-4 are white (palette 7), rest magenta (palette 3)
+        uint8_t row = i / 4;  // 4 bytes per row (8 pixels / 2)
+        if (row >= 3 && row <= 4) {
+            tiles[i] = 0x77;  // Two white pixels
         } else {
-            tiles[i] = 0x11;  // Magenta
+            tiles[i] = 0x33;  // Two magenta pixels
         }
     }
 }
@@ -100,19 +102,18 @@ static void tilemap_setup_palette(void) {
 }
 
 // Fill tilemap - highway in center, transparent elsewhere
-static void tilemap_fill(void) {
-    uint8_t *tmap = (uint8_t *)TILEMAP_BASE_ADDR;
+static void tilemap_fill(uint8_t *tmap) {
     uint8_t x, y;
 
-    // 40 columns x 32 rows
-    // Highway at pixels 96-159 = tiles 6-9 (16x16 tiles, so 96/16=6)
+    // 40 columns x 32 rows (8x8 tiles = 320x256 pixels, but only 256x192 visible)
+    // Highway at pixels 96-159 = tiles 12-19 (8x8 tiles, so 96/8=12, 159/8=19)
     for (y = 0; y < 32; y++) {
         for (x = 0; x < 40; x++) {
             uint8_t tile;
 
-            if (x >= 6 && x <= 9) {
+            if (x >= 12 && x <= 19) {
                 // Highway area
-                if ((x == 7 || x == 8) && (y % 2 == 0)) {
+                if ((x == 15 || x == 16) && (y % 4 == 0)) {
                     tile = TILE_DASH;  // Center dashes
                 } else {
                     tile = TILE_MAGENTA;
@@ -127,28 +128,50 @@ static void tilemap_fill(void) {
 
 // Initialize tilemap
 void tilemap_init(void) {
+    uint8_t old_bank6;
+
+    // Save old MMU6 bank
+    IO_NEXTREG_REG = MY_REG_MMU6;
+    old_bank6 = IO_NEXTREG_DAT;
+
+    // Map bank 10 to slot 6 (0xC000-0xDFFF)
+    IO_NEXTREG_REG = MY_REG_MMU6;
+    IO_NEXTREG_DAT = TILEMAP_BANK;
+
     // Define tile patterns
-    tilemap_define_tiles();
+    tilemap_define_tiles((uint8_t *)TILES_OFFSET);
+
+    // Fill tilemap data
+    tilemap_fill((uint8_t *)TILEMAP_OFFSET);
+
+    // Restore old MMU6 bank
+    IO_NEXTREG_REG = MY_REG_MMU6;
+    IO_NEXTREG_DAT = old_bank6;
 
     // Set up palette
     tilemap_setup_palette();
 
-    // Fill tilemap data
-    tilemap_fill();
-
     // Set tilemap base address
+    // Bank 10 = 8K bank, physical address = 10 * 0x2000 = 0x14000
+    // Register 0x6E: bits 5:0 = A13-A18 of tilemap address
+    // 0x14000 = 0b0001_0100_0000_0000_0000
+    // A13-A18 = bits 13-18 = 0b001010 = 10 (the bank number!)
+    // But we also need to account for offset within bank
+    // Tilemap is at start of bank, so just the bank * 2
     IO_NEXTREG_REG = REG_TILEMAP_BASE;
-    IO_NEXTREG_DAT = (TILEMAP_BASE_ADDR >> 8);
+    IO_NEXTREG_DAT = TILEMAP_BANK * 2;  // 10 * 2 = 20 = 0x14
 
     // Set tile definitions address
+    // Tiles at 0x14600 (bank 10 + 0x600 offset)
+    // A13-A18 of 0x14600 = same calculation, 0x14600 >> 13 = 10, plus offset
     IO_NEXTREG_REG = REG_TILEMAP_TILES;
-    IO_NEXTREG_DAT = (TILES_BASE_ADDR >> 8);
+    IO_NEXTREG_DAT = (TILEMAP_BANK * 2) + (6 >> 5);  // ~0x14
 
-    // Set transparency index to 0
+    // Transparency color register
     IO_NEXTREG_REG = REG_TILEMAP_TRANS;
     IO_NEXTREG_DAT = 0x00;
 
-    // Default attribute
+    // Default attribute (palette offset 0, no mirror/rotate)
     IO_NEXTREG_REG = REG_TILEMAP_ATTR;
     IO_NEXTREG_DAT = 0x00;
 
@@ -157,13 +180,9 @@ void tilemap_init(void) {
 
 // Enable tilemap display
 void tilemap_enable(void) {
-    IO_NEXTREG_REG = REG_TILEMAP_CTRL;
-    // Bit 7: Enable tilemap
-    // Bit 6: Tilemap over Layer 2 (1 = tilemap on top of Layer 2)
-    // Bit 5: 0 = 40x32, 1 = 80x32
-    // Bit 4: 0 = 8-bit tiles, 1 = 4-bit tiles (we use 4-bit)
-    // Bit 0: Enable palette index 0 as transparent
-    IO_NEXTREG_DAT = 0xD1;  // Enable, over Layer2, 40x32, 4-bit, transparent index 0
+    // DISABLED FOR DEBUGGING - tilemap not working correctly
+    // IO_NEXTREG_REG = REG_TILEMAP_CTRL;
+    // IO_NEXTREG_DAT = 0xA0;
 }
 
 // Disable tilemap display

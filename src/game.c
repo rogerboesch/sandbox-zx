@@ -324,9 +324,9 @@ void game_update(void) {
 
     // Survival bonus (every 50 frames = ~1 second at 50Hz)
     game.survival_timer++;
-    if (game.survival_timer >= 50) {
+    if (game.survival_timer >= 10) {
         game.survival_timer = 0;
-        game.score += SCORE_PER_SECOND;
+        game.score += 1;
     }
 
     // Update effect timers
@@ -344,7 +344,7 @@ int8_t game_get_shake_offset(void) {
 // Render game
 // Render HUD text on ULA
 static void render_hud_text(void) {
-    ula_print_at(1, 0, "SCORE", ATTR_WHITE_ON_BLACK);
+    ula_print_at(0, 0, "SCORE", ATTR_WHITE_ON_BLACK);
     ula_print_num(7, 0, game.score, ATTR_YELLOW_ON_BLACK);
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
