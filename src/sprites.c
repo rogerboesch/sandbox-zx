@@ -51,7 +51,7 @@ static const uint8_t zx_palette[16] = {
     0x1A,  // 5: Cyan
     0xD8,  // 6: Yellow
     0xDA,  // 7: White
-    0x00,  // 8: Bright Black
+    0x49,  // 8: Dark Gray (RGB332: ~33% each channel)
     0x03,  // 9: Bright Blue
     0xE0,  // 10: Bright Red
     0xE7,  // 11: Bright Magenta (avoid 0xE3 which is transparent)
@@ -145,6 +145,11 @@ void sprites_upload_patterns(void) {
     // Upload highway sprite (slot 5)
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_highway[i]);
+    }
+
+    // Upload shadow sprite (slot 6)
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_shadow[i]);
     }
 }
 

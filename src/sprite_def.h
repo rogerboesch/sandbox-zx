@@ -80,30 +80,30 @@ static const uint8_t sprite_enemy1[256] = {
 #undef R
 #undef Y
 
-// Enemy type 2 - larger cruiser (bright green with bright yellow accents)
+// Enemy type 2 - larger cruiser (bright magenta/purple with bright yellow accents)
 #define T 0xE3
-#define G 12
+#define P 11
 #define Y 14
 static const uint8_t sprite_enemy2[256] = {
-    T,T,T,T,G,G,G,G,G,G,G,G,T,T,T,T,
-    T,T,T,G,G,G,G,G,G,G,G,G,G,T,T,T,
-    T,T,G,G,G,G,G,G,G,G,G,G,G,G,T,T,
-    T,G,G,G,G,G,G,Y,Y,G,G,G,G,G,G,T,
-    G,G,G,G,G,G,Y,Y,Y,Y,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,G,
-    G,G,G,G,G,G,Y,Y,Y,Y,G,G,G,G,G,G,
-    T,G,G,G,G,G,G,Y,Y,G,G,G,G,G,G,T,
-    T,T,G,G,G,G,G,G,G,G,G,G,G,G,T,T,
-    T,T,T,G,G,G,G,G,G,G,G,G,G,T,T,T,
-    T,T,T,T,G,G,G,G,G,G,G,G,T,T,T,T
+    T,T,T,T,P,P,P,P,P,P,P,P,T,T,T,T,
+    T,T,T,P,P,P,P,P,P,P,P,P,P,T,T,T,
+    T,T,P,P,P,P,P,P,P,P,P,P,P,P,T,T,
+    T,P,P,P,P,P,P,Y,Y,P,P,P,P,P,P,T,
+    P,P,P,P,P,P,Y,Y,Y,Y,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,P,
+    P,P,P,P,P,P,Y,Y,Y,Y,P,P,P,P,P,P,
+    T,P,P,P,P,P,P,Y,Y,P,P,P,P,P,P,T,
+    T,T,P,P,P,P,P,P,P,P,P,P,P,P,T,T,
+    T,T,T,P,P,P,P,P,P,P,P,P,P,T,T,T,
+    T,T,T,T,P,P,P,P,P,P,P,P,T,T,T,T
 };
 #undef T
-#undef G
+#undef P
 #undef Y
 
 // Explosion animation frame (red/yellow/white)
@@ -157,5 +157,30 @@ static const uint8_t sprite_highway[256] = {
 };
 #undef W
 #undef C
+
+// Player shadow - same shape as player but dark gray
+// T=0xE3 (transparent), S=8 (bright black / dark gray)
+#define T 0xE3
+#define S 8
+static const uint8_t sprite_shadow[256] = {
+    T,T,T,T,T,T,T,S,S,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,S,S,S,S,T,T,T,T,T,T,
+    T,T,T,T,T,S,S,S,S,S,S,T,T,T,T,T,
+    T,T,T,T,T,S,S,S,S,S,S,T,T,T,T,T,
+    T,T,T,T,S,S,S,S,S,S,S,S,T,T,T,T,
+    T,T,T,T,S,S,S,S,S,S,S,S,T,T,T,T,
+    T,T,T,S,S,S,S,S,S,S,S,S,S,T,T,T,
+    T,T,T,S,S,S,S,S,S,S,S,S,S,T,T,T,
+    T,T,S,S,S,S,S,S,S,S,S,S,S,S,T,T,
+    T,T,S,S,S,S,S,S,S,S,S,S,S,S,T,T,
+    T,S,S,S,T,S,S,S,S,S,S,T,S,S,S,T,
+    T,S,S,T,T,S,S,S,S,S,S,T,T,S,S,T,
+    S,S,S,T,T,T,S,S,S,S,T,T,T,S,S,S,
+    S,S,T,T,T,T,S,S,S,S,T,T,T,T,S,S,
+    S,T,T,T,T,T,T,S,S,T,T,T,T,T,T,S,
+    T,T,T,T,T,T,T,S,S,T,T,T,T,T,T,T
+};
+#undef T
+#undef S
 
 #endif

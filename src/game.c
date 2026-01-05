@@ -378,10 +378,12 @@ void game_render(void) {
 
     // Highway is rendered by tilemap hardware (scrolled via tilemap_scroll)
 
-    // Render player sprite (with flicker if invincible)
+    // Render player shadow first (behind player)
     if (player.invincible == 0 || (player.invincible & 0x04)) {
+        sprite_set(sprite_slot++, player.x + SHADOW_OFFSET_X, player.y + SHADOW_OFFSET_Y, SPRITE_SHADOW, 0);
         sprite_set(sprite_slot++, player.x, player.y, SPRITE_PLAYER, 0);
     } else {
+        sprite_hide(sprite_slot++);
         sprite_hide(sprite_slot++);
     }
 

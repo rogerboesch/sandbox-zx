@@ -54,6 +54,11 @@
 #define SPRITE_ENEMY2   3
 #define SPRITE_EXPLOSION 4
 #define SPRITE_HIGHWAY  5
+#define SPRITE_SHADOW   6
+
+// Shadow offset
+#define SHADOW_OFFSET_X  3
+#define SHADOW_OFFSET_Y  3
 
 // Colors (9-bit RGB, using 8-bit approximation)
 #define COLOR_BLACK     0x00
