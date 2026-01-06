@@ -1,84 +1,82 @@
 #ifndef SPRITEDEF_H
 #define SPRITEDEF_H
 
-// Player ship - facing upward (bright white with bright cyan cockpit)
-// T=0xE3 (transparent), W=15 (bright white), C=13 (bright cyan)
+// Player ship - rotated 90° clockwise
+// T=0xE3 (transparent), M=11 (bright magenta)
 #define T 0xE3
-#define W 15
-#define C 13
+#define M 11
 static const uint8_t sprite_player[256] = {
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,
-    T,T,T,T,T,W,W,W,W,W,W,T,T,T,T,T,
-    T,T,T,T,T,W,W,C,C,W,W,T,T,T,T,T,
-    T,T,T,T,W,W,W,C,C,W,W,W,T,T,T,T,
-    T,T,T,T,W,W,W,W,W,W,W,W,T,T,T,T,
-    T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-    T,T,T,W,W,W,W,W,W,W,W,W,W,T,T,T,
-    T,T,W,W,W,W,W,W,W,W,W,W,W,W,T,T,
-    T,T,W,W,W,W,W,W,W,W,W,W,W,W,T,T,
-    T,W,W,W,T,W,W,W,W,W,W,T,W,W,W,T,
-    T,W,W,T,T,W,W,W,W,W,W,T,T,W,W,T,
-    W,W,W,T,T,T,W,W,W,W,T,T,T,W,W,W,
-    W,W,T,T,T,T,W,W,W,W,T,T,T,T,W,W,
-    W,T,T,T,T,T,T,W,W,T,T,T,T,T,T,W,
-    T,T,T,T,T,T,T,W,W,T,T,T,T,T,T,T
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,M,T,T,T,T,M,T,T,T,T,M,T,T,
+    T,T,T,T,T,T,T,T,M,T,T,T,T,T,T,T,
+    T,T,T,M,T,T,T,M,M,M,T,T,T,M,T,T,
+    T,T,T,T,T,T,M,M,M,M,M,T,T,T,T,T,
+    T,T,M,M,M,T,M,M,M,M,M,T,M,M,M,T,
+    T,T,M,M,M,T,M,M,M,M,M,T,M,M,M,T,
+    T,T,T,M,T,T,T,T,T,T,T,T,T,M,T,T,
+    T,M,M,M,M,M,T,M,M,M,T,M,M,M,M,M,
+    T,M,M,M,M,M,T,M,M,M,T,M,M,M,M,M,
+    T,M,M,M,M,M,T,M,M,M,T,M,M,M,M,M,
+    T,T,M,M,M,M,M,M,M,M,M,M,M,M,M,T,
+    T,T,M,M,M,M,M,M,M,M,M,M,M,M,M,T,
+    T,T,T,M,M,M,M,M,M,M,M,M,M,M,T,T,
+    T,T,T,T,M,M,M,M,M,M,M,M,M,T,T,T
 };
 #undef T
-#undef W
-#undef C
+#undef M
 
 // Bullet - vertical energy bolt (bright yellow/white)
 #define T 0xE3
-#define W 15
+#define W 8
 #define Y 14
 static const uint8_t sprite_bullet[256] = {
-    T,T,T,T,T,T,T,Y,Y,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,
-    T,T,T,T,T,T,W,W,W,W,T,T,T,T,T,T,
-    T,T,T,T,T,T,Y,W,W,Y,T,T,T,T,T,T,
-    T,T,T,T,T,T,T,Y,Y,T,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,W,W,T,T,T,W,W,T,T,T,W,W,T,
+    T,T,T,W,W,T,T,T,W,W,T,T,T,W,W,T,
+    T,T,T,W,W,T,T,T,W,W,T,T,T,W,W,T,
+    T,T,T,Y,Y,T,T,T,Y,Y,T,T,T,Y,Y,T
 };
 #undef T
 #undef W
 #undef Y
 
-// Enemy type 1 - from tilemap 2x2 block (7,7)-(8,8) in bright red
-// B=0 (black background), R=10 (bright red)
+// Enemy type 1 - from tilemap 2x2 block (7,7)-(8,8) in bright yellow
+// B=0 (black background), Y=14 (bright yellow)
 #define B 0
-#define R 10
+#define Y 14
 #define T 0xE3
 static const uint8_t sprite_enemy1[256] = {
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,
-    T,T,T,T,R,R,B,B,B,B,R,R,T,T,T,T,
-    T,T,T,R,B,B,B,B,R,B,B,B,R,T,T,T,
-    T,T,R,B,B,R,R,B,B,B,R,B,B,R,T,T,
-    T,T,R,B,R,R,R,R,B,B,R,R,B,R,T,T,
-    T,R,B,B,B,B,R,R,B,R,R,R,B,B,R,T,
-    T,R,B,R,B,B,B,R,R,R,R,B,B,B,R,T,
-    T,R,B,B,B,R,R,R,R,B,B,B,R,B,R,T,
-    T,R,B,B,R,R,R,B,R,R,B,B,B,B,R,T,
-    T,T,R,B,R,R,B,B,R,R,R,R,B,R,T,T,
-    T,T,R,B,B,R,B,B,B,R,R,B,B,R,T,T,
-    T,T,T,R,B,B,B,R,B,B,B,B,R,T,T,T,
-    T,T,T,T,R,R,B,B,B,B,R,R,T,T,T,T,
-    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,
+    T,T,T,T,T,T,Y,Y,Y,Y,T,T,T,T,T,T,
+    T,T,T,T,Y,Y,B,B,B,B,Y,Y,T,T,T,T,
+    T,T,T,Y,B,B,B,B,Y,B,B,B,Y,T,T,T,
+    T,T,Y,B,B,Y,Y,B,B,B,Y,B,B,Y,T,T,
+    T,T,Y,B,Y,Y,Y,Y,B,B,Y,Y,B,Y,T,T,
+    T,Y,B,B,B,B,Y,Y,B,Y,Y,Y,B,B,Y,T,
+    T,Y,B,Y,B,B,B,Y,Y,Y,Y,B,B,B,Y,T,
+    T,Y,B,B,B,Y,Y,Y,Y,B,B,B,Y,B,Y,T,
+    T,Y,B,B,Y,Y,Y,B,Y,Y,B,B,B,B,Y,T,
+    T,T,Y,B,Y,Y,B,B,Y,Y,Y,Y,B,Y,T,T,
+    T,T,Y,B,B,Y,B,B,B,Y,Y,B,B,Y,T,T,
+    T,T,T,Y,B,B,B,Y,B,B,B,B,Y,T,T,T,
+    T,T,T,T,Y,Y,B,B,B,B,Y,Y,T,T,T,T,
+    T,T,T,T,T,T,Y,Y,Y,Y,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
 };
 #undef B
-#undef R
+#undef Y
 #undef T
 
 // Enemy type 2 - speed enemy in bright magenta
@@ -160,27 +158,27 @@ static const uint8_t sprite_highway[256] = {
 #undef W
 #undef C
 
-// Player shadow - same shape as player but dithered (checkerboard)
+// Player shadow - matches new player shape, dithered (checkerboard)
 // T=0xE3 (transparent), S=8 (bright black / dark gray)
 #define T 0xE3
 #define S 8
 static const uint8_t sprite_shadow[256] = {
-    T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,S,T,S,T,T,T,T,T,T,T,
-    T,T,T,T,T,S,T,S,T,S,T,T,T,T,T,T,
-    T,T,T,T,T,T,S,T,S,T,S,T,T,T,T,T,
-    T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,T,
-    T,T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,
-    T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,T,
-    T,T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,
-    T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,S,T,S,T,T,T,T,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,
+    T,T,T,S,T,T,T,S,T,S,T,T,T,S,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,S,
+    T,T,S,T,S,T,T,T,S,T,T,T,S,T,S,T,
+    T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,S,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,
     T,T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
-    T,S,T,S,T,T,S,T,S,T,S,T,T,S,T,T,
-    T,T,S,T,T,S,T,S,T,S,T,T,S,T,S,T,
-    S,T,S,T,T,T,T,S,T,S,T,T,T,T,S,T,
-    T,S,T,T,T,T,S,T,S,T,T,T,T,S,T,S,
-    S,T,T,T,T,T,T,T,S,T,T,T,T,T,T,S,
-    T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,T
+    T,T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,T,T,T,S,T,S,T,S,T,S,T,T,T,T
 };
 #undef T
 #undef S

@@ -11,7 +11,7 @@ BIN_DIR = bin
 SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c
 
 # Header files
-HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprite_def.h
+HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprite_def.h src/tiles.h
 
 # Default target - creates NEX file for ZX Spectrum Next
 all: $(BIN_DIR)/$(OUTPUT).nex
