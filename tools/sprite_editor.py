@@ -47,8 +47,8 @@ ZX_PALETTE = [
     (255, 255, 255),  # 15: Bright White
 ]
 
-# Transparent color (magenta 0xE3 in RGB332, but we use bright magenta visually)
-TRANSPARENT_RGB = (255, 0, 255)  # Palette index 11 is used for transparent
+# Palette index 11 (bright magenta) is the transparent color in the game
+# Paint it as solid color - the game hardware handles transparency
 
 class SpriteEditor:
     def __init__(self, input_path, tile_size=16):
@@ -155,11 +155,8 @@ class SpriteEditor:
         if self.current_tile and 0 <= px < self.tile_size and 0 <= py < self.tile_size:
             self.save_undo()
             color = ZX_PALETTE[self.selected_color]
-            # Use full alpha, except for "transparent" color (index 11 bright magenta)
-            if self.selected_color == 11:
-                self.current_tile.set_at((px, py), (255, 0, 255, 0))  # Transparent
-            else:
-                self.current_tile.set_at((px, py), (*color, 255))
+            # All colors are solid - bright magenta (11) will be transparent in the game
+            self.current_tile.set_at((px, py), (*color, 255))
             self.apply_tile_to_working()
 
     def flood_fill(self, px, py):
@@ -169,12 +166,7 @@ class SpriteEditor:
 
         self.save_undo()
         target_color = self.current_tile.get_at((px, py))
-        fill_color = ZX_PALETTE[self.selected_color]
-
-        if self.selected_color == 11:
-            fill_color = (255, 0, 255, 0)  # Transparent
-        else:
-            fill_color = (*fill_color, 255)
+        fill_color = (*ZX_PALETTE[self.selected_color], 255)
 
         # Don't fill if same color
         if target_color[:3] == fill_color[:3]:
@@ -215,12 +207,7 @@ class SpriteEditor:
 
         self.save_undo()
         target_color = self.current_tile.get_at((px, py))
-        fill_color = ZX_PALETTE[self.selected_color]
-
-        if self.selected_color == 11:
-            fill_color = (255, 0, 255, 0)  # Transparent
-        else:
-            fill_color = (*fill_color, 255)
+        fill_color = (*ZX_PALETTE[self.selected_color], 255)
 
         # Replace all matching pixels
         for y in range(self.tile_size):

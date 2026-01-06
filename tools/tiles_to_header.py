@@ -86,13 +86,14 @@ def convert_sprites(input_path, output_path, num_rows):
                     rgb = rgba[:3]
                     alpha = rgba[3] if len(rgba) > 3 else 255
 
-                    # Transparent if alpha < 128 or black with low alpha
+                    # Transparent if alpha < 128 or bright magenta (index 11)
                     if alpha < 128:
                         pixel_val = SPRITE_TRANSPARENT
                     else:
                         pixel_val = ZX_PALETTE.get(rgb, 0)
-                        # If black and we want it transparent, use 0xE3
-                        # (keeping black as 0 for actual black pixels)
+                        # Bright magenta (11) = transparent in sprites
+                        if pixel_val == 11:
+                            pixel_val = SPRITE_TRANSPARENT
 
                     row_pixels.append(f'0x{pixel_val:02X}')
 

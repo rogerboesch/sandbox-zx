@@ -55,7 +55,7 @@ static const uint8_t zx_palette[16] = {
     0x49,  // 8: Dark Gray (RGB332: ~33% each channel)
     0x03,  // 9: Bright Blue
     0xE0,  // 10: Bright Red
-    0xE7,  // 11: Bright Magenta (avoid 0xE3 which is transparent)
+    0xE3,  // 11: Bright Magenta (0xE3 = sprite transparent color)
     0x1C,  // 12: Bright Green
     0x1F,  // 13: Bright Cyan
     0xFC,  // 14: Bright Yellow
