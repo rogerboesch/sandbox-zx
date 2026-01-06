@@ -79,31 +79,31 @@ static const uint8_t sprite_enemy1[256] = {
 #undef Y
 #undef T
 
-// Enemy type 2 - speed enemy in bright magenta
-// B=0 (black background), M=11 (bright magenta)
+// Enemy type 2 - speed enemy in bright red
+// B=0 (black background), R=10 (bright red)
 #define B 0
-#define M 11
+#define R 10
 #define T 0xE3
 static const uint8_t sprite_enemy2[256] = {
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,M,M,M,M,T,T,T,T,T,T,
-    T,T,T,T,M,M,B,B,B,B,M,M,T,T,T,T,
-    T,T,T,M,B,B,B,B,M,B,B,B,M,T,T,T,
-    T,T,M,B,B,M,M,B,B,B,M,B,B,M,T,T,
-    T,T,M,B,M,M,M,M,B,B,M,M,B,M,T,T,
-    T,M,B,B,B,B,M,M,B,M,M,M,B,B,M,T,
-    T,M,B,M,B,B,B,M,M,M,M,B,B,B,M,T,
-    T,M,B,B,B,M,M,M,M,B,B,B,M,B,M,T,
-    T,M,B,B,M,M,M,B,M,M,B,B,B,B,M,T,
-    T,T,M,B,M,M,B,B,M,M,M,M,B,M,T,T,
-    T,T,M,B,B,M,B,B,B,M,M,B,B,M,T,T,
-    T,T,T,M,B,B,B,M,B,B,B,B,M,T,T,T,
-    T,T,T,T,M,M,B,B,B,B,M,M,T,T,T,T,
-    T,T,T,T,T,T,M,M,M,M,T,T,T,T,T,T,
+    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,
+    T,T,T,T,R,R,B,B,B,B,R,R,T,T,T,T,
+    T,T,T,R,B,B,B,B,R,B,B,B,R,T,T,T,
+    T,T,R,B,B,R,R,B,B,B,R,B,B,R,T,T,
+    T,T,R,B,R,R,R,R,B,B,R,R,B,R,T,T,
+    T,R,B,B,B,B,R,R,B,R,R,R,B,B,R,T,
+    T,R,B,R,B,B,B,R,R,R,R,B,B,B,R,T,
+    T,R,B,B,B,R,R,R,R,B,B,B,R,B,R,T,
+    T,R,B,B,R,R,R,B,R,R,B,B,B,B,R,T,
+    T,T,R,B,R,R,B,B,R,R,R,R,B,R,T,T,
+    T,T,R,B,B,R,B,B,B,R,R,B,B,R,T,T,
+    T,T,T,R,B,B,B,R,B,B,B,B,R,T,T,T,
+    T,T,T,T,R,R,B,B,B,B,R,R,T,T,T,T,
+    T,T,T,T,T,T,R,R,R,R,T,T,T,T,T,T,
     T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
 };
 #undef B
-#undef M
+#undef R
 #undef T
 
 // Explosion animation frame (red/yellow/white)

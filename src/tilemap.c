@@ -78,43 +78,50 @@ static void tilemap_setup_palette(void) {
     ZXN_NEXTREG(0x43, 0x00);
 }
 
-// Fill tilemap - highway in center using 2x2 tile blocks
-// Uses tiles from (9,1)-(A,2) with occasional magenta tiles
+// Fill tilemap - highway in center with left/middle/right borders
+// Left border: cyan line on left, Middle: solid black, Right border: cyan line on right
+// Sporadic holes (16px wide) on left or right side that player must avoid
 static void tilemap_fill(void) {
     uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
-    uint8_t block_x, block_y;
-    uint8_t use_magenta;
+    uint8_t hole_side;  // 0=no hole, 1=left hole, 2=right hole
+    uint8_t hole_active;
 
-    // Highway spans tiles 16-23 (8 tiles wide = 4 blocks of 2x2)
+    // Highway spans tiles 16-23 (8 tiles wide)
+    // x=16: left border, x=17-19: left half, x=20-22: right half, x=23: right border
     for (y = 0; y < 32; y++) {
+        // Pseudo-random hole pattern based on y position
+        // Creates holes every ~12 rows, spanning 2 rows (16px tall)
+        hole_active = ((y % 12) < 2);  // Hole spans 2 rows
+        hole_side = ((y / 12) & 1) ? 1 : 2;  // Alternate left/right
+
+        // Skip holes near top/bottom edges
+        if (y < 4 || y > 27) hole_active = 0;
+
         for (x = 0; x < 40; x++) {
             uint8_t tile;
+            uint8_t is_hole = 0;
 
-            if (x >= 16 && x <= 23) {
-                // Inside highway - use 2x2 block pattern
-                // Determine which 2x2 block we're in
-                block_x = (x - 16) >> 1;  // 0-3
-                block_y = y >> 1;         // 0-15
-
-                // Use magenta for some blocks (pseudo-random pattern)
-                use_magenta = ((block_x + block_y * 3) % 5 == 0);
-
-                if (y & 1) {
-                    // Odd row: bottom tiles
-                    if (use_magenta) {
-                        tile = (x & 1) ? TILE_ROAD_BR_MAG : TILE_ROAD_BL_MAG;
-                    } else {
-                        tile = (x & 1) ? TILE_ROAD_BR : TILE_ROAD_BL;
-                    }
-                } else {
-                    // Even row: top tiles
-                    if (use_magenta) {
-                        tile = (x & 1) ? TILE_ROAD_TR_MAG : TILE_ROAD_TL_MAG;
-                    } else {
-                        tile = (x & 1) ? TILE_ROAD_TR : TILE_ROAD_TL;
-                    }
+            // Check if this tile should be a hole (2 tiles = 16px wide)
+            if (hole_active) {
+                if (hole_side == 1 && x >= 16 && x <= 17) {
+                    is_hole = 1;  // Left side hole (16px)
+                } else if (hole_side == 2 && x >= 22 && x <= 23) {
+                    is_hole = 1;  // Right side hole (16px)
                 }
+            }
+
+            if (is_hole) {
+                tile = TILE_TRANS;
+            } else if (x == 16) {
+                // Left border
+                tile = (y & 1) ? TILE_ROAD_LEFT_B : TILE_ROAD_LEFT_T;
+            } else if (x >= 17 && x <= 22) {
+                // Middle
+                tile = (y & 1) ? TILE_ROAD_MID_B : TILE_ROAD_MID_T;
+            } else if (x == 23) {
+                // Right border
+                tile = (y & 1) ? TILE_ROAD_RIGHT_B : TILE_ROAD_RIGHT_T;
             } else {
                 tile = TILE_TRANS;
             }
