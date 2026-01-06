@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Nebula 8 Tileset Editor
-- Left: Source tilemap2.png (variable size)
+- Left: Source tileset3.png (scrollable if large)
 - Right: Editable canvas (16x16 tiles, 128x128 pixels)
 - Place, delete, rotate, mirror tiles
 - Save as PNG
@@ -14,6 +14,7 @@ Controls:
 - R: Rotate selected tile on right (90° clockwise cycle)
 - H: Mirror horizontal (flip tile on right)
 - V: Mirror vertical (flip tile on right)
+- Mouse wheel on left: Scroll source tiles
 - Ctrl+S: Save
 - Ctrl+O: Load existing tileset
 - Ctrl+N: Clear right side
@@ -43,6 +44,8 @@ BUTTON_COLOR = (60, 60, 80)
 BUTTON_HOVER = (80, 80, 100)
 BUTTON_ACTIVE = (100, 100, 150)
 EMPTY_TILE_COLOR = (20, 20, 30)
+SCROLLBAR_BG = (50, 50, 60)
+SCROLLBAR_FG = (100, 100, 120)
 
 
 class TilesetEditor:
@@ -52,15 +55,21 @@ class TilesetEditor:
 
         self.toolbar_height = 60
         self.gap = 40  # Gap between left and right
+        self.footer_height = 80
+
+        # Get desktop size
+        info = pygame.display.Info()
+        self.max_width = info.current_w - 100
+        self.max_height = info.current_h - 100
 
         # Get source image dimensions first (without convert_alpha)
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        tilemap_path = os.path.join(script_dir, '..', 'art', 'tilemap2.png')
+        tilemap_path = os.path.join(script_dir, '..', 'art', 'tileset3.png')
         try:
             temp_img = pygame.image.load(tilemap_path)
             img_w, img_h = temp_img.get_size()
         except pygame.error as e:
-            print(f"Cannot find tilemap2.png at {tilemap_path}: {e}")
+            print(f"Cannot find tileset3.png at {tilemap_path}: {e}")
             sys.exit(1)
 
         self.tile_src_size = TILE_SIZE
@@ -68,14 +77,26 @@ class TilesetEditor:
         self.src_rows = img_h // self.tile_src_size
         self.src_total = self.src_cols * self.src_rows
 
-        # Calculate window size based on source + fixed output
-        self.left_width = self.src_cols * SCALED_TILE
-        self.left_height = self.src_rows * SCALED_TILE
+        # Full size of source content
+        self.left_full_width = self.src_cols * SCALED_TILE
+        self.left_full_height = self.src_rows * SCALED_TILE
+
+        # Right side is fixed
         self.right_width = OUTPUT_COLS * SCALED_TILE
         self.right_height = OUTPUT_ROWS * SCALED_TILE
 
-        self.window_width = self.left_width + self.gap + self.right_width
-        self.window_height = max(self.left_height, self.right_height) + self.toolbar_height + 100
+        # Calculate available space for left panel
+        min_left_width = min(self.left_full_width, 400)  # At least show some tiles
+        available_width = self.max_width - self.right_width - self.gap
+        available_height = self.max_height - self.toolbar_height - self.footer_height
+
+        # Visible left panel size (may be smaller than full content)
+        self.left_view_width = min(self.left_full_width, available_width)
+        self.left_view_height = min(self.left_full_height, available_height)
+
+        # Window size
+        self.window_width = min(self.left_view_width + self.gap + self.right_width, self.max_width)
+        self.window_height = min(max(self.left_view_height, self.right_height) + self.toolbar_height + self.footer_height, self.max_height)
 
         self.screen = pygame.display.set_mode((self.window_width, self.window_height))
         self.clock = pygame.time.Clock()
@@ -85,10 +106,19 @@ class TilesetEditor:
         # Now load and extract tiles with proper display
         self.load_source_tilemap(tilemap_path)
 
+        # Scroll state for left panel
+        self.scroll_x = 0
+        self.scroll_y = 0
+        self.max_scroll_x = max(0, self.left_full_width - self.left_view_width)
+        self.max_scroll_y = max(0, self.left_full_height - self.left_view_height)
+
         # Regions
-        self.left_rect = pygame.Rect(0, self.toolbar_height, self.left_width, self.left_height)
-        self.right_rect = pygame.Rect(self.left_width + self.gap, self.toolbar_height,
+        self.left_rect = pygame.Rect(0, self.toolbar_height, self.left_view_width, self.left_view_height)
+        self.right_rect = pygame.Rect(self.left_view_width + self.gap, self.toolbar_height,
                                        self.right_width, self.right_height)
+
+        # Create left surface for clipping
+        self.left_surface = pygame.Surface((self.left_full_width, self.left_full_height), pygame.SRCALPHA)
 
         # Editor state
         self.selected_tile = 0
@@ -185,7 +215,12 @@ class TilesetEditor:
                 elif event.type == pygame.KEYDOWN:
                     self.handle_key(event)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.handle_click(event)
+                    if event.button in (4, 5):  # Mouse wheel
+                        self.handle_scroll(event)
+                    else:
+                        self.handle_click(event)
+                elif event.type == pygame.MOUSEWHEEL:
+                    self.handle_mousewheel(event)
                 elif event.type == pygame.MOUSEMOTION:
                     if pygame.mouse.get_pressed()[0]:
                         self.handle_drag(event)
@@ -195,6 +230,36 @@ class TilesetEditor:
             self.clock.tick(60)
 
         pygame.quit()
+
+    def handle_scroll(self, event):
+        """Handle scroll wheel (button 4/5)"""
+        pos = pygame.mouse.get_pos()
+        if self.left_rect.collidepoint(pos):
+            mods = pygame.key.get_mods()
+            scroll_amount = SCALED_TILE * 2
+
+            if event.button == 4:  # Scroll up
+                if mods & pygame.KMOD_SHIFT:
+                    self.scroll_x = max(0, self.scroll_x - scroll_amount)
+                else:
+                    self.scroll_y = max(0, self.scroll_y - scroll_amount)
+            elif event.button == 5:  # Scroll down
+                if mods & pygame.KMOD_SHIFT:
+                    self.scroll_x = min(self.max_scroll_x, self.scroll_x + scroll_amount)
+                else:
+                    self.scroll_y = min(self.max_scroll_y, self.scroll_y + scroll_amount)
+
+    def handle_mousewheel(self, event):
+        """Handle mousewheel event"""
+        pos = pygame.mouse.get_pos()
+        if self.left_rect.collidepoint(pos):
+            mods = pygame.key.get_mods()
+            scroll_amount = SCALED_TILE * 2
+
+            if mods & pygame.KMOD_SHIFT:
+                self.scroll_x = max(0, min(self.max_scroll_x, self.scroll_x - event.y * scroll_amount))
+            else:
+                self.scroll_y = max(0, min(self.max_scroll_y, self.scroll_y - event.y * scroll_amount))
 
     def handle_key(self, event):
         """Handle keyboard input"""
@@ -212,6 +277,15 @@ class TilesetEditor:
             self.load_tileset()
         elif event.key == pygame.K_n and (mods & pygame.KMOD_CTRL or mods & pygame.KMOD_META):
             self.new_tileset()
+        # Arrow keys for scrolling
+        elif event.key == pygame.K_UP:
+            self.scroll_y = max(0, self.scroll_y - SCALED_TILE)
+        elif event.key == pygame.K_DOWN:
+            self.scroll_y = min(self.max_scroll_y, self.scroll_y + SCALED_TILE)
+        elif event.key == pygame.K_LEFT:
+            self.scroll_x = max(0, self.scroll_x - SCALED_TILE)
+        elif event.key == pygame.K_RIGHT:
+            self.scroll_x = min(self.max_scroll_x, self.scroll_x + SCALED_TILE)
 
     def handle_click(self, event):
         """Handle mouse click"""
@@ -223,10 +297,10 @@ class TilesetEditor:
                 btn['action']()
                 return
 
-        # Check left side (source) - select tile
+        # Check left side (source) - select tile (with scroll offset)
         if self.left_rect.collidepoint(pos):
-            rel_x = pos[0] - self.left_rect.x
-            rel_y = pos[1] - self.left_rect.y
+            rel_x = pos[0] - self.left_rect.x + self.scroll_x
+            rel_y = pos[1] - self.left_rect.y + self.scroll_y
             col = rel_x // SCALED_TILE
             row = rel_y // SCALED_TILE
             if 0 <= col < self.src_cols and 0 <= row < self.src_rows:
@@ -350,39 +424,47 @@ class TilesetEditor:
         text = self.small_font.render(file_text, True, TEXT_COLOR)
         self.screen.blit(text, (500, 15))
 
-        # Labels
-        label_y = self.toolbar_height + max(self.left_height, self.right_height) + 10
-        text = self.font.render("Source (click to select)", True, TEXT_COLOR)
-        self.screen.blit(text, (10, label_y))
-
-        text = self.font.render("Output (click to place, R/H/V to transform)", True, TEXT_COLOR)
-        self.screen.blit(text, (self.left_width + self.gap + 10, label_y))
-
-        # Draw left side (source)
+        # Draw left side (source) with scrolling
+        self.left_surface.fill((0, 0, 0, 0))
         for idx, tile in enumerate(self.source_tiles_scaled):
             col = idx % self.src_cols
             row = idx // self.src_cols
-            x = self.left_rect.x + col * SCALED_TILE
-            y = self.left_rect.y + row * SCALED_TILE
-            self.screen.blit(tile, (x, y))
+            x = col * SCALED_TILE
+            y = row * SCALED_TILE
+            self.left_surface.blit(tile, (x, y))
 
-        # Draw left grid
-        for x in range(0, self.left_width + 1, SCALED_TILE):
-            pygame.draw.line(self.screen, GRID_COLOR,
-                           (self.left_rect.x + x, self.left_rect.y),
-                           (self.left_rect.x + x, self.left_rect.y + self.left_height))
-        for y in range(0, self.left_height + 1, SCALED_TILE):
-            pygame.draw.line(self.screen, GRID_COLOR,
-                           (self.left_rect.x, self.left_rect.y + y),
-                           (self.left_rect.x + self.left_width, self.left_rect.y + y))
+        # Draw grid on left surface
+        for x in range(0, self.left_full_width + 1, SCALED_TILE):
+            pygame.draw.line(self.left_surface, GRID_COLOR, (x, 0), (x, self.left_full_height))
+        for y in range(0, self.left_full_height + 1, SCALED_TILE):
+            pygame.draw.line(self.left_surface, GRID_COLOR, (0, y), (self.left_full_width, y))
 
-        # Selection highlight on left
+        # Selection highlight on left surface
         sel_col = self.selected_tile % self.src_cols
         sel_row = self.selected_tile // self.src_cols
-        sel_rect = pygame.Rect(self.left_rect.x + sel_col * SCALED_TILE,
-                               self.left_rect.y + sel_row * SCALED_TILE,
-                               SCALED_TILE, SCALED_TILE)
-        pygame.draw.rect(self.screen, SELECT_COLOR, sel_rect, 2)
+        sel_rect = pygame.Rect(sel_col * SCALED_TILE, sel_row * SCALED_TILE, SCALED_TILE, SCALED_TILE)
+        pygame.draw.rect(self.left_surface, SELECT_COLOR, sel_rect, 3)
+
+        # Blit visible portion of left surface
+        visible_rect = pygame.Rect(self.scroll_x, self.scroll_y, self.left_view_width, self.left_view_height)
+        self.screen.blit(self.left_surface, self.left_rect.topleft, visible_rect)
+
+        # Draw scrollbar if needed
+        if self.max_scroll_y > 0:
+            sb_x = self.left_view_width - 8
+            sb_height = self.left_view_height
+            sb_thumb_height = max(20, sb_height * self.left_view_height // self.left_full_height)
+            sb_thumb_y = self.toolbar_height + (self.scroll_y / self.max_scroll_y) * (sb_height - sb_thumb_height)
+            pygame.draw.rect(self.screen, SCROLLBAR_BG, (sb_x, self.toolbar_height, 8, sb_height))
+            pygame.draw.rect(self.screen, SCROLLBAR_FG, (sb_x, sb_thumb_y, 8, sb_thumb_height), border_radius=4)
+
+        # Labels
+        label_y = self.toolbar_height + max(self.left_view_height, self.right_height) + 10
+        text = self.font.render("Source (scroll with wheel)", True, TEXT_COLOR)
+        self.screen.blit(text, (10, label_y))
+
+        text = self.font.render("Output (R/H/V to transform)", True, TEXT_COLOR)
+        self.screen.blit(text, (self.left_view_width + self.gap + 10, label_y))
 
         # Draw right side (output)
         for idx, tile_data in enumerate(self.right_tiles):
@@ -424,7 +506,7 @@ class TilesetEditor:
         self.screen.blit(text, (10, label_y + 25))
 
         # Help
-        help_text = "Alt+Click: 2x2 block | Right-click: Delete | R: Rotate | H/V: Flip"
+        help_text = "Alt+Click: 2x2 | Right-click: Del | R: Rotate | H/V: Flip | Scroll: wheel/arrows"
         text = self.small_font.render(help_text, True, (150, 150, 150))
         self.screen.blit(text, (10, self.window_height - 25))
 
