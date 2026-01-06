@@ -90,24 +90,30 @@ static void tilemap_fill(void) {
     // Highway spans tiles 16-23 (8 tiles wide)
     // x=16: left border, x=17-19: left half, x=20-22: right half, x=23: right border
     for (y = 0; y < 32; y++) {
-        // Pseudo-random hole pattern based on y position
-        // Creates holes every ~12 rows, spanning 2 rows (16px tall)
-        hole_active = ((y % 12) < 2);  // Hole spans 2 rows
-        hole_side = ((y / 12) & 1) ? 1 : 2;  // Alternate left/right
+        // Explicit hole positions to ensure safe start and both sides
+        // Player starts at tilemap row ~25 (due to +32 sprite offset)
+        // So avoid rows 20-31, place holes at rows 4-5 (right) and 12-13 (left)
+        hole_active = 0;
+        hole_side = 0;
 
-        // Skip holes near top/bottom edges
-        if (y < 4 || y > 27) hole_active = 0;
+        if (y == 4 || y == 5) {
+            hole_active = 1;
+            hole_side = 2;  // Right side
+        } else if (y == 12 || y == 13) {
+            hole_active = 1;
+            hole_side = 1;  // Left side
+        }
 
         for (x = 0; x < 40; x++) {
             uint8_t tile;
             uint8_t is_hole = 0;
 
-            // Check if this tile should be a hole (2 tiles = 16px wide)
+            // Check if this tile should be a hole (half highway width)
             if (hole_active) {
-                if (hole_side == 1 && x >= 16 && x <= 17) {
-                    is_hole = 1;  // Left side hole (16px)
-                } else if (hole_side == 2 && x >= 22 && x <= 23) {
-                    is_hole = 1;  // Right side hole (16px)
+                if (hole_side == 1 && x >= 16 && x <= 19) {
+                    is_hole = 1;  // Left half hole (32px)
+                } else if (hole_side == 2 && x >= 20 && x <= 23) {
+                    is_hole = 1;  // Right half hole (32px)
                 }
             }
 

@@ -105,6 +105,13 @@ typedef struct {
     uint8_t invincible;
 } Player;
 
+// Crash types for border flash colors
+#define CRASH_NONE       0
+#define CRASH_HOLE       1  // Blue flash
+#define CRASH_ENEMY      2  // Yellow flash (normal enemy)
+#define CRASH_ENEMY_FAST 3  // Red flash (fast enemy)
+#define CRASH_HIGHWAY    4  // White flash (fell off highway)
+
 // Game data structure
 typedef struct {
     GameState state;
@@ -116,6 +123,7 @@ typedef struct {
     uint8_t frame_count;
     uint8_t shake_timer;      // Screen shake countdown
     uint8_t crash_timer;      // "CRASH" text countdown
+    uint8_t crash_type;       // Type of crash for border color
     uint8_t survival_timer;   // Counts frames for survival bonus
 } GameData;
 

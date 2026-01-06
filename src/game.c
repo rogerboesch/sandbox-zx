@@ -18,6 +18,9 @@ GameData game;
 // Random seed
 static uint16_t rand_seed = 0x1234;
 
+// Hole collision cooldown (prevents continuous point loss)
+static uint8_t hole_cooldown = 0;
+
 // Simple random number generator
 static uint8_t fast_rand(void) {
     rand_seed = rand_seed * 1103515245 + 12345;
@@ -95,6 +98,7 @@ void game_init(void) {
     game.frame_count = 0;
     game.shake_timer = 0;
     game.crash_timer = 0;
+    game.crash_type = CRASH_NONE;
     game.survival_timer = 0;
 
     // Reset scroll positions
@@ -102,6 +106,9 @@ void game_init(void) {
     layer2_scroll(0);
     layer2_scroll_x(0);
     tilemap_scroll(0);
+
+    // Reset hole collision cooldown
+    hole_cooldown = 0;
 }
 
 // Fire a bullet from player position (fires upward)
@@ -205,6 +212,42 @@ static uint8_t check_collision(int16_t x1, int16_t y1, uint8_t w1, uint8_t h1,
             y1 < y2 + h2 && y1 + h1 > y2);
 }
 
+// Tilemap constants for reading tile data
+#define TILEMAP_ADDR    0x6000
+#define TILEMAP_WIDTH   40
+#define TILE_TRANS      0x07
+
+// Check if player is over a hole in the highway
+// Returns 1 if player center is over a hole, 0 otherwise
+static uint8_t check_hole_collision(void) {
+    int16_t player_center_x = player.x + (PLAYER_WIDTH / 2);
+    int16_t player_center_y = player.y + (PLAYER_HEIGHT / 2);
+    uint8_t tile_x, tile_y, tile;
+    uint8_t *tilemap = (uint8_t *)TILEMAP_ADDR;
+    uint8_t scroll_val;
+    int16_t tilemap_y_px;
+
+    // Sprites have 32-pixel offset from tilemap origin on ZX Next
+    // Convert sprite coords to tilemap coords
+    int16_t tm_x = player_center_x + 32;
+    int16_t tm_y = player_center_y + 32;
+
+    // Convert to tilemap tile X (tilemap is 40 tiles wide, screen shows middle 32)
+    tile_x = tm_x / 8;
+    if (tile_x >= TILEMAP_WIDTH) return 0;
+
+    // Convert to tilemap tile Y (accounting for scroll)
+    scroll_val = (uint8_t)(scroll_y & 0xFF);
+    tilemap_y_px = tm_y + scroll_val;
+    tile_y = (tilemap_y_px / 8) & 0x1F;  // mod 32
+
+    // Read tile from tilemap
+    tile = tilemap[tile_y * TILEMAP_WIDTH + tile_x];
+
+    // Check if it's a transparent/hole tile
+    return (tile == TILE_TRANS) ? 1 : 0;
+}
+
 // Check all collisions
 void game_check_collisions(void) {
     uint8_t i, j;
@@ -239,6 +282,8 @@ void game_check_collisions(void) {
 
             if (check_collision(player.x, player.y, PLAYER_WIDTH, PLAYER_HEIGHT,
                                enemies[i].x, enemies[i].y, ENEMY_WIDTH, ENEMY_HEIGHT)) {
+                // Set crash type based on enemy type (yellow=normal, red=fast)
+                game.crash_type = (enemies[i].type == 0) ? CRASH_ENEMY : CRASH_ENEMY_FAST;
                 enemies[i].active = 0;
                 player.lives--;
                 player.invincible = 120;  // 2 seconds of invincibility
@@ -305,12 +350,28 @@ void game_update(void) {
             player.invincible = 120;    // 2 seconds invincibility
             game.shake_timer = SHAKE_DURATION;
             game.crash_timer = CRASH_TEXT_DURATION;
+            game.crash_type = CRASH_HIGHWAY;
 
             if (player.lives == 0) {
                 game.state = STATE_GAMEOVER;
                 return;
             }
         }
+    }
+
+    // Check for hole collision - reduce score, shake screen, blue flash (no invincibility)
+    if (hole_cooldown > 0) {
+        hole_cooldown--;
+    } else if (check_hole_collision()) {
+        if (game.score >= 200) {
+            game.score -= 200;
+        } else {
+            game.score = 0;
+        }
+        game.shake_timer = SHAKE_DURATION;
+        game.crash_timer = CRASH_TEXT_DURATION;
+        game.crash_type = CRASH_HOLE;
+        hole_cooldown = 30;
     }
 
     // Update scrolling (vertical scroll - decrement to scroll downward)

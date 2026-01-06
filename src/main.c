@@ -149,13 +149,22 @@ int main(void) {
                 game_update();
                 game_render();
 
-                // Apply shake and white border flash when hit
-                if (game.crash_timer > 0) {
+                // Apply shake when shake_timer active (holes or crashes)
+                if (game.shake_timer > 0) {
                     apply_shake();
-                    // Flash border white (alternate every 4 frames)
-                    z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x07 : 0x00);
+                }
+
+                // Border flash color based on crash type
+                if (game.crash_timer > 0) {
+                    uint8_t flash_color;
+                    switch (game.crash_type) {
+                        case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
+                        case CRASH_ENEMY:      flash_color = 0x06; break;  // Yellow
+                        case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
+                        default:               flash_color = 0x07; break;  // White (highway)
+                    }
+                    z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
                 } else {
-                    // Normal black border
                     z80_outp(0xFE, 0x00);
                 }
                 break;
