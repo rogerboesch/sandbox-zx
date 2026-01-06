@@ -154,7 +154,7 @@ void sprites_upload_patterns(void) {
 }
 
 // Set sprite attributes (5-byte mode for 8-bit sprites)
-void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t flags) {
+void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern) {
     // Adjust coordinates for sprite offset (sprites are positioned from 32,32)
     x += 32;
     y += 32;
@@ -180,7 +180,7 @@ void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t fla
     //   Bits 4-0: scaling=0 (1x), type=0 (anchor)
     z80_outp(SPRITE_ATTR_PORT, x & 0xFF);           // Byte 0: X low byte
     z80_outp(SPRITE_ATTR_PORT, y & 0xFF);           // Byte 1: Y low byte
-    z80_outp(SPRITE_ATTR_PORT, ((x >> 8) & 0x01) | flags);  // Byte 2: X MSB + rotation/mirror
+    z80_outp(SPRITE_ATTR_PORT, (x >> 8) & 0x01);    // Byte 2: X MSB only
     z80_outp(SPRITE_ATTR_PORT, 0xC0 | (pattern & 0x3F));    // Byte 3: Visible, E=1, pattern[5:0]
     z80_outp(SPRITE_ATTR_PORT, (pattern & 0x40) << 1);      // Byte 4: N6->bit7, T=0, no scaling
 }

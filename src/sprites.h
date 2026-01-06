@@ -10,7 +10,7 @@ void sprites_init(void);
 void sprites_upload_patterns(void);
 
 // Set sprite attributes
-void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern, uint8_t flags);
+void sprite_set(uint8_t slot, int16_t x, int16_t y, uint8_t pattern);
 
 // Hide a sprite
 void sprite_hide(uint8_t slot);

@@ -446,8 +446,8 @@ void game_render(void) {
 
     // Render player shadow first (behind player)
     if (player.invincible == 0 || (player.invincible & 0x04)) {
-        sprite_set(sprite_slot++, player.x + SHADOW_OFFSET_X, player.y + SHADOW_OFFSET_Y, SPRITE_SHADOW, 0);
-        sprite_set(sprite_slot++, player.x, player.y, SPRITE_PLAYER, 0);
+        sprite_set(sprite_slot++, player.x + SHADOW_OFFSET_X, player.y + SHADOW_OFFSET_Y, SPRITE_SHADOW);
+        sprite_set(sprite_slot++, player.x, player.y, SPRITE_PLAYER);
     } else {
         sprite_hide(sprite_slot++);
         sprite_hide(sprite_slot++);
@@ -456,7 +456,7 @@ void game_render(void) {
     // Render bullets
     for (i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].active) {
-            sprite_set(sprite_slot++, bullets[i].x, bullets[i].y, SPRITE_BULLET, 0);
+            sprite_set(sprite_slot++, bullets[i].x, bullets[i].y, SPRITE_BULLET);
         }
     }
 
@@ -467,22 +467,15 @@ void game_render(void) {
             int16_t enemy_center = enemies[i].x + (ENEMY_WIDTH / 2);
             uint8_t shadow_mult = (enemy_center >= HIGHWAY_LEFT && enemy_center <= HIGHWAY_RIGHT) ? 1 : 3;
             sprite_set(sprite_slot++, enemies[i].x + SHADOW_OFFSET_X * shadow_mult,
-                       enemies[i].y + SHADOW_OFFSET_Y * shadow_mult, SPRITE_ENEMY_SHADOW, 0);
+                       enemies[i].y + SHADOW_OFFSET_Y * shadow_mult, SPRITE_ENEMY_SHADOW);
         }
     }
 
-    // Render enemies with rotation
+    // Render enemies
     for (i = 0; i < MAX_ENEMIES; i++) {
         if (enemies[i].active) {
             uint8_t pattern = (enemies[i].type == 0) ? SPRITE_ENEMY1 : SPRITE_ENEMY2;
-            // Rotate based on frame count + enemy index for variety
-            // Byte 2 format: bit 1=Rotate, bit 2=Y mirror, bit 3=X mirror
-            uint8_t rot = ((game.frame_count >> 2) + i) & 0x07;
-            uint8_t flags = 0;
-            if (rot & 0x04) flags |= 0x02;  // Rotate 90 (bit 1)
-            if (rot & 0x02) flags |= 0x04;  // Y mirror (bit 2)
-            if (rot & 0x01) flags |= 0x08;  // X mirror (bit 3)
-            sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern, flags);
+            sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern);
         }
     }
 
