@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "tilemap.h"
-#include "tiles.h"
+#include "tile_def.h"
 
 // Tilemap registers
 #define REG_TILEMAP_CTRL     0x6B
@@ -20,7 +20,7 @@
 // Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
-#define MAX_TILES       128  // First 8 rows of tilemap (128 * 32 = 4KB)
+#define MAX_TILES       8    // 8 road tiles (8 * 32 = 256 bytes)
 
 // Scroll state
 int16_t scroll_y = 0;

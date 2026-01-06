@@ -2,18 +2,17 @@
 #include <z80.h>
 #include <stdint.h>
 #include "layer2.h"
-#include "tiles.h"
+#include "tile_def.h"
 
 // Layer 2 uses 8K banks 16-21 (6 banks x 8K = 48K for 256x192x8bpp)
 // We'll use MMU slot 2 (0x4000-0x5FFF) for writing
 #define MMU_SLOT2_REG  0x52
 
-// Layer 2 background tiles (2x2 block from tilemap)
-// Positions: (0,A), (1,A), (0,B), (1,B)
-#define L2_TILE_TL  tile_0A  // top-left
-#define L2_TILE_TR  tile_1A  // top-right
-#define L2_TILE_BL  tile_0B  // bottom-left
-#define L2_TILE_BR  tile_1B  // bottom-right
+// Layer 2 background tiles (2x2 starfield pattern)
+#define L2_TILE_TL  tile_l2_tl  // top-left
+#define L2_TILE_TR  tile_l2_tr  // top-right
+#define L2_TILE_BL  tile_l2_bl  // bottom-left
+#define L2_TILE_BR  tile_l2_br  // bottom-right
 
 // ZX Spectrum colors in RGB332 for Layer 2
 static const uint8_t zx_to_rgb332[16] = {
