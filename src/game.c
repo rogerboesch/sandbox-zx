@@ -215,7 +215,7 @@ static uint8_t check_collision(int16_t x1, int16_t y1, uint8_t w1, uint8_t h1,
 // Tilemap constants for reading tile data
 #define TILEMAP_ADDR    0x6000
 #define TILEMAP_WIDTH   40
-#define TILE_TRANS      0x07
+#define TILE_TRANS      0x03
 
 // Check if player is over a hole in the highway
 // Returns 1 if player center is over a hole, 0 otherwise
