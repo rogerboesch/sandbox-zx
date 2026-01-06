@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
 Nebula 8 Tileset Editor
-- Left: Source tileset3.png (scrollable if large)
+- Left: Source tileset (scrollable if large)
 - Right: Editable canvas (16x16 tiles, 128x128 pixels)
 - Place, delete, rotate, mirror tiles
 - Save as PNG
+
+Usage: python3 tileset_editor.py [source.png]
+  Default source: art/tileset3.png
 
 Controls:
 - Left click on left: Select tile
@@ -49,9 +52,8 @@ SCROLLBAR_FG = (100, 100, 120)
 
 
 class TilesetEditor:
-    def __init__(self):
+    def __init__(self, source_path=None):
         pygame.init()
-        pygame.display.set_caption("Nebula 8 Tileset Editor")
 
         self.toolbar_height = 60
         self.gap = 40  # Gap between left and right
@@ -62,14 +64,25 @@ class TilesetEditor:
         self.max_width = info.current_w - 100
         self.max_height = info.current_h - 100
 
-        # Get source image dimensions first (without convert_alpha)
+        # Determine source path
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        tilemap_path = os.path.join(script_dir, '..', 'art', 'tileset3.png')
+        if source_path:
+            if os.path.isabs(source_path):
+                tilemap_path = source_path
+            else:
+                tilemap_path = os.path.abspath(source_path)
+        else:
+            tilemap_path = os.path.join(script_dir, '..', 'art', 'tileset3.png')
+
+        self.source_path = tilemap_path
+        pygame.display.set_caption(f"Nebula 8 Tileset Editor - {os.path.basename(tilemap_path)}")
+
+        # Get source image dimensions first (without convert_alpha)
         try:
             temp_img = pygame.image.load(tilemap_path)
             img_w, img_h = temp_img.get_size()
         except pygame.error as e:
-            print(f"Cannot find tileset3.png at {tilemap_path}: {e}")
+            print(f"Cannot find source at {tilemap_path}: {e}")
             sys.exit(1)
 
         self.tile_src_size = TILE_SIZE
@@ -573,7 +586,8 @@ class TilesetEditor:
 
 
 def main():
-    editor = TilesetEditor()
+    source_path = sys.argv[1] if len(sys.argv) > 1 else None
+    editor = TilesetEditor(source_path)
     editor.run()
 
 

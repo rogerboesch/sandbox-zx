@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
-Generate a tilemap grid image with 1px red separators and hex labels.
-Usage: python3 tilemap_grid.py [input.png] [output.png]
+Generate a tilemap grid image with 1px red separators and labels.
+Columns: A-P (letters), Rows: 0-15 (numbers)
+Usage: python3 tilemap_grid.py [input.png] [output.png] [tile_size]
+  tile_size: 8 (default) or 16
 """
 
 from PIL import Image, ImageDraw, ImageFont
@@ -37,14 +39,16 @@ def create_tilemap_grid(input_path, output_path, tile_size=8):
     except:
         font = ImageFont.load_default()
 
-    # Labels for columns/rows (hex-style: 0-9, A-F, then G, H, etc.)
-    def get_label(i):
-        if i < 16:
-            return format(i, 'X')
-        return chr(ord('G') + i - 16)
+    # Column labels: A, B, C, D... (letters)
+    # Row labels: 0, 1, 2, 3... (numbers)
+    def get_col_label(i):
+        return chr(ord('A') + i)
 
-    col_labels = [get_label(i) for i in range(tiles_x)]
-    row_labels = [get_label(i) for i in range(tiles_y)]
+    def get_row_label(i):
+        return str(i)
+
+    col_labels = [get_col_label(i) for i in range(tiles_x)]
+    row_labels = [get_row_label(i) for i in range(tiles_y)]
 
     # Draw column labels (top) - white text
     for tx in range(tiles_x):
@@ -79,6 +83,7 @@ def create_tilemap_grid(input_path, output_path, tile_size=8):
     # Save the result
     dst.save(output_path)
     print(f'Saved to: {output_path}')
+    print(f'Tile size: {tile_size}x{tile_size}')
     print(f'Original: {src_width}x{src_height} ({tiles_x}x{tiles_y} tiles)')
     print(f'New size: {new_width}x{new_height}')
 
@@ -88,5 +93,10 @@ if __name__ == '__main__':
 
     input_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(script_dir, 'tilemap.png')
     output_path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(script_dir, 'tilemap_grid.png')
+    tile_size = int(sys.argv[3]) if len(sys.argv) > 3 else 8
 
-    create_tilemap_grid(input_path, output_path)
+    if tile_size not in (8, 16):
+        print(f"Error: tile_size must be 8 or 16, got {tile_size}")
+        sys.exit(1)
+
+    create_tilemap_grid(input_path, output_path, tile_size)
