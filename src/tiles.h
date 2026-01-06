@@ -21,11 +21,11 @@
 #define TILE_ROAD_BL_MAG 0x68  // (8,6) - bottom-left magenta
 #define TILE_ROAD_BR_MAG 0x69  // (9,6) - bottom-right magenta
 
-// Highway 2x2 block tiles - White at (A,5), (B,5), (A,6), (B,6)
-#define TILE_ROAD_TL     0x5A  // (A,5) - top-left white
-#define TILE_ROAD_TR     0x5B  // (B,5) - top-right white
-#define TILE_ROAD_BL     0x6A  // (A,6) - bottom-left white
-#define TILE_ROAD_BR     0x6B  // (B,6) - bottom-right white
+// Highway 2x2 block tiles - at (9,1), (A,1), (9,2), (A,2)
+#define TILE_ROAD_TL     0x19  // (9,1) - top-left
+#define TILE_ROAD_TR     0x1A  // (A,1) - top-right
+#define TILE_ROAD_BL     0x29  // (9,2) - bottom-left
+#define TILE_ROAD_BR     0x2A  // (A,2) - bottom-right
 
 // Tile at (0,0)
 static const uint8_t tile_00[32] = {

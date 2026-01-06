@@ -79,7 +79,7 @@ static void tilemap_setup_palette(void) {
 }
 
 // Fill tilemap - highway in center using 2x2 tile blocks
-// Mostly white tiles with occasional magenta
+// Uses tiles from (9,1)-(A,2) with occasional magenta tiles
 static void tilemap_fill(void) {
     uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
