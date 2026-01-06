@@ -52,8 +52,8 @@
 #define SPRITE_BULLET   1
 #define SPRITE_ENEMY1   2
 #define SPRITE_ENEMY2   3
-#define SPRITE_EXPLOSION 4
-#define SPRITE_HIGHWAY  5
+// Slot 4 - unused
+// Slot 5 - unused
 #define SPRITE_SHADOW   6
 #define SPRITE_ENEMY_SHADOW 7
 

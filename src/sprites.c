@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "game.h"
 #include "sprite_def.h"
+#include "spriteset.h"
 
 // ZX Spectrum Next I/O ports
 #define SPRITE_SLOT_PORT      0x303B
@@ -117,9 +118,9 @@ void sprites_upload_patterns(void) {
     // Select sprite pattern slot 0
     z80_outp(SPRITE_SLOT_PORT, SPRITE_PLAYER);
 
-    // Upload player sprite
+    // Upload player sprite (H0 from spriteset)
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_player[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_H0[i]);
     }
 
     // Upload bullet sprite (slot 1)
@@ -127,29 +128,23 @@ void sprites_upload_patterns(void) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_bullet[i]);
     }
 
-    // Upload enemy1 sprite (slot 2)
+    // Upload enemy1 sprite (A0 from spriteset)
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_enemy1[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_A0[i]);
     }
 
-    // Upload enemy2 sprite (slot 3)
+    // Upload enemy2 sprite (slot 3) - using A0 for now
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_enemy2[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_A0[i]);
     }
 
-    // Upload explosion sprite (slot 4)
-    for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_explosion[i]);
-    }
+    // Slot 4 - unused
+    // Slot 5 - unused
 
-    // Upload highway sprite (slot 5)
+    // Upload player shadow sprite (slot 6)
+    z80_outp(SPRITE_SLOT_PORT, SPRITE_SHADOW);
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_highway[i]);
-    }
-
-    // Upload shadow sprite (slot 6)
-    for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_shadow[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_player_shadow[i]);
     }
 
     // Upload enemy shadow sprite (slot 7)
