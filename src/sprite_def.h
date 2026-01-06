@@ -160,27 +160,52 @@ static const uint8_t sprite_highway[256] = {
 #undef W
 #undef C
 
-// Player shadow - same shape as player but dark gray
+// Player shadow - same shape as player but dithered (checkerboard)
 // T=0xE3 (transparent), S=8 (bright black / dark gray)
 #define T 0xE3
 #define S 8
 static const uint8_t sprite_shadow[256] = {
-    T,T,T,T,T,T,T,S,S,T,T,T,T,T,T,T,
-    T,T,T,T,T,T,S,S,S,S,T,T,T,T,T,T,
-    T,T,T,T,T,S,S,S,S,S,S,T,T,T,T,T,
-    T,T,T,T,T,S,S,S,S,S,S,T,T,T,T,T,
-    T,T,T,T,S,S,S,S,S,S,S,S,T,T,T,T,
-    T,T,T,T,S,S,S,S,S,S,S,S,T,T,T,T,
-    T,T,T,S,S,S,S,S,S,S,S,S,S,T,T,T,
-    T,T,T,S,S,S,S,S,S,S,S,S,S,T,T,T,
-    T,T,S,S,S,S,S,S,S,S,S,S,S,S,T,T,
-    T,T,S,S,S,S,S,S,S,S,S,S,S,S,T,T,
-    T,S,S,S,T,S,S,S,S,S,S,T,S,S,S,T,
-    T,S,S,T,T,S,S,S,S,S,S,T,T,S,S,T,
-    S,S,S,T,T,T,S,S,S,S,T,T,T,S,S,S,
-    S,S,T,T,T,T,S,S,S,S,T,T,T,T,S,S,
-    S,T,T,T,T,T,T,S,S,T,T,T,T,T,T,S,
-    T,T,T,T,T,T,T,S,S,T,T,T,T,T,T,T
+    T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,S,T,S,T,T,T,T,T,T,T,
+    T,T,T,T,T,S,T,S,T,S,T,T,T,T,T,T,
+    T,T,T,T,T,T,S,T,S,T,S,T,T,T,T,T,
+    T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,T,
+    T,T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,T,
+    T,T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
+    T,S,T,S,T,T,S,T,S,T,S,T,T,S,T,T,
+    T,T,S,T,T,S,T,S,T,S,T,T,S,T,S,T,
+    S,T,S,T,T,T,T,S,T,S,T,T,T,T,S,T,
+    T,S,T,T,T,T,S,T,S,T,T,T,T,S,T,S,
+    S,T,T,T,T,T,T,T,S,T,T,T,T,T,T,S,
+    T,T,T,T,T,T,T,S,T,T,T,T,T,T,T,T
+};
+#undef T
+#undef S
+
+// Enemy shadow - circular shape with dithered pattern (checkerboard)
+// T=0xE3 (transparent), S=8 (bright black / dark gray)
+#define T 0xE3
+#define S 8
+static const uint8_t sprite_enemy_shadow[256] = {
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,S,T,S,T,T,T,T,T,T,T,
+    T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
+    T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,
+    T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,S,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,
+    T,T,S,T,S,T,S,T,S,T,S,T,S,T,T,T,
+    T,T,T,S,T,S,T,S,T,S,T,S,T,T,T,T,
+    T,T,T,T,S,T,S,T,S,T,S,T,T,T,T,T,
+    T,T,T,T,T,T,S,T,S,T,T,T,T,T,T,T,
+    T,T,T,T,T,T,T,T,T,T,T,T,T,T,T,T
 };
 #undef T
 #undef S

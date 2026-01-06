@@ -151,6 +151,11 @@ void sprites_upload_patterns(void) {
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_shadow[i]);
     }
+
+    // Upload enemy shadow sprite (slot 7)
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_enemy_shadow[i]);
+    }
 }
 
 // Set sprite attributes (5-byte mode for 8-bit sprites)

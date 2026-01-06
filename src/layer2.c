@@ -9,11 +9,11 @@
 #define MMU_SLOT2_REG  0x52
 
 // Layer 2 background tiles (2x2 block from tilemap)
-// Positions: (0,1), (1,1), (0,2), (1,2)
-#define L2_TILE_TL  tile_01  // top-left
-#define L2_TILE_TR  tile_11  // top-right
-#define L2_TILE_BL  tile_02  // bottom-left
-#define L2_TILE_BR  tile_12  // bottom-right
+// Positions: (0,A), (1,A), (0,B), (1,B)
+#define L2_TILE_TL  tile_0A  // top-left
+#define L2_TILE_TR  tile_1A  // top-right
+#define L2_TILE_BL  tile_0B  // bottom-left
+#define L2_TILE_BR  tile_1B  // bottom-right
 
 // ZX Spectrum colors in RGB332 for Layer 2
 static const uint8_t zx_to_rgb332[16] = {

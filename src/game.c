@@ -399,6 +399,17 @@ void game_render(void) {
         }
     }
 
+    // Render enemy shadows first (behind enemies)
+    // Shadow offset is 3x larger when not over highway
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            int16_t enemy_center = enemies[i].x + (ENEMY_WIDTH / 2);
+            uint8_t shadow_mult = (enemy_center >= HIGHWAY_LEFT && enemy_center <= HIGHWAY_RIGHT) ? 1 : 3;
+            sprite_set(sprite_slot++, enemies[i].x + SHADOW_OFFSET_X * shadow_mult,
+                       enemies[i].y + SHADOW_OFFSET_Y * shadow_mult, SPRITE_ENEMY_SHADOW, 0);
+        }
+    }
+
     // Render enemies with rotation
     for (i = 0; i < MAX_ENEMIES; i++) {
         if (enemies[i].active) {
