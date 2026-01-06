@@ -48,14 +48,12 @@
 #define CRASH_TEXT_DURATION 60   // Frames to show "CRASH"
 
 // Sprite pattern slots
-#define SPRITE_PLAYER   0
-#define SPRITE_BULLET   1
-#define SPRITE_ENEMY1   2
-#define SPRITE_ENEMY2   3
-// Slot 4 - unused
-// Slot 5 - unused
-#define SPRITE_SHADOW   6
-#define SPRITE_ENEMY_SHADOW 7
+#define SPRITE_PLAYER       0
+#define SPRITE_BULLET       1
+#define SPRITE_ENEMY_BASE   2   // Enemy frames A0-G0 at slots 2-8
+#define ENEMY_ANIM_FRAMES   7   // 7 animation frames
+#define SPRITE_SHADOW       9
+#define SPRITE_ENEMY_SHADOW 10
 
 // Shadow offset
 #define SHADOW_OFFSET_X  3

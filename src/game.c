@@ -471,10 +471,12 @@ void game_render(void) {
         }
     }
 
-    // Render enemies
+    // Render enemies with animation
     for (i = 0; i < MAX_ENEMIES; i++) {
         if (enemies[i].active) {
-            uint8_t pattern = (enemies[i].type == 0) ? SPRITE_ENEMY1 : SPRITE_ENEMY2;
+            // Animate through frames A0-G0, offset by enemy index for variety
+            uint8_t frame = ((game.frame_count >> 3) + i) % ENEMY_ANIM_FRAMES;
+            uint8_t pattern = SPRITE_ENEMY_BASE + frame;
             sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern);
         }
     }

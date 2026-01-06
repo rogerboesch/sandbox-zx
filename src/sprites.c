@@ -128,26 +128,35 @@ void sprites_upload_patterns(void) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_bullet[i]);
     }
 
-    // Upload enemy1 sprite (A0 from spriteset)
+    // Upload enemy animation frames A0-G0 (slots 2-8)
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_A0[i]);
     }
-
-    // Upload enemy2 sprite (slot 3) - using A0 for now
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_A0[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_B0[i]);
+    }
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_C0[i]);
+    }
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_D0[i]);
+    }
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_E0[i]);
+    }
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_F0[i]);
+    }
+    for (i = 0; i < 256; i++) {
+        z80_outp(SPRITE_PATTERN_PORT, sprite_G0[i]);
     }
 
-    // Slot 4 - unused
-    // Slot 5 - unused
-
-    // Upload player shadow sprite (slot 6)
-    z80_outp(SPRITE_SLOT_PORT, SPRITE_SHADOW);
+    // Upload player shadow sprite (slot 9)
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_player_shadow[i]);
     }
 
-    // Upload enemy shadow sprite (slot 7)
+    // Upload enemy shadow sprite (slot 10)
     for (i = 0; i < 256; i++) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_enemy_shadow[i]);
     }
