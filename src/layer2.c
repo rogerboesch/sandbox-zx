@@ -2,17 +2,17 @@
 #include <z80.h>
 #include <stdint.h>
 #include "layer2.h"
-#include "tile_def.h"
+#include "tileset.h"
 
 // Layer 2 uses 8K banks 16-21 (6 banks x 8K = 48K for 256x192x8bpp)
 // We'll use MMU slot 2 (0x4000-0x5FFF) for writing
 #define MMU_SLOT2_REG  0x52
 
-// Layer 2 background tiles (2x2 starfield pattern)
-#define L2_TILE_TL  tile_l2_tl  // top-left
-#define L2_TILE_TR  tile_l2_tr  // top-right
-#define L2_TILE_BL  tile_l2_bl  // bottom-left
-#define L2_TILE_BR  tile_l2_br  // bottom-right
+// Layer 2 background tiles (2x2 starfield pattern from tileset.h)
+#define L2_TILE_TL  tile_G2  // top-left
+#define L2_TILE_TR  tile_H2  // top-right
+#define L2_TILE_BL  tile_G3  // bottom-left
+#define L2_TILE_BR  tile_H4  // bottom-right
 
 // ZX Spectrum colors in RGB332 for Layer 2
 static const uint8_t zx_to_rgb332[16] = {
@@ -95,14 +95,14 @@ static void layer2_draw_8k_bank(uint8_t l2_bank, uint8_t start_y) {
     IO_NEXTREG_DAT = old_bank;
 }
 
-// Initialize Layer 2 with blue grid
+// Initialize Layer 2 with starfield pattern
 void layer2_init(void) {
     // Set Layer 2 RAM to start at bank 16 (8K banks)
     // Register 0x12 uses 16K bank number, so 16K bank 8 = 8K banks 16-17
     IO_NEXTREG_REG = 0x12;
     IO_NEXTREG_DAT = 8;
 
-    // Draw grid to all 6 8K banks (192 lines total)
+    // Draw starfield to all 6 8K banks (192 lines total)
     // Bank 16: lines 0-31, Bank 17: lines 32-63
     // Bank 18: lines 64-95, Bank 19: lines 96-127
     // Bank 20: lines 128-159, Bank 21: lines 160-191

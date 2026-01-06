@@ -3,7 +3,29 @@
 #include <stdint.h>
 #include <string.h>
 #include "tilemap.h"
-#include "tile_def.h"
+#include "tileset.h"
+
+// Tile indices for tilemap
+#define TILE_ROAD_LEFT    0x00  // left border (G6)
+#define TILE_ROAD_MID     0x01  // middle (L6)
+#define TILE_ROAD_RIGHT   0x02  // right border (H6)
+#define TILE_TRANS        0x03  // transparent/empty
+
+// Transparent tile (bright magenta = palette index 11 = 0xBB per byte)
+static const uint8_t tile_transparent[32] = {
+    0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB,
+    0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB,
+    0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB,
+    0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB
+};
+
+// Tilemap tiles array (4 tiles for road)
+static const uint8_t * const tilemap_tiles[4] = {
+    tile_G6,           // 0: TILE_ROAD_LEFT
+    tile_L6,           // 1: TILE_ROAD_MID
+    tile_H6,           // 2: TILE_ROAD_RIGHT
+    tile_transparent   // 3: TILE_TRANS
+};
 
 // Tilemap registers
 #define REG_TILEMAP_CTRL     0x6B
@@ -20,7 +42,7 @@
 // Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
-#define MAX_TILES       8    // 8 road tiles (8 * 32 = 256 bytes)
+#define MAX_TILES       4    // 4 road tiles (4 * 32 = 128 bytes)
 
 // Scroll state
 int16_t scroll_y = 0;
@@ -121,13 +143,13 @@ static void tilemap_fill(void) {
                 tile = TILE_TRANS;
             } else if (x == 16) {
                 // Left border
-                tile = (y & 1) ? TILE_ROAD_LEFT_B : TILE_ROAD_LEFT_T;
+                tile = TILE_ROAD_LEFT;
             } else if (x >= 17 && x <= 22) {
                 // Middle
-                tile = (y & 1) ? TILE_ROAD_MID_B : TILE_ROAD_MID_T;
+                tile = TILE_ROAD_MID;
             } else if (x == 23) {
                 // Right border
-                tile = (y & 1) ? TILE_ROAD_RIGHT_B : TILE_ROAD_RIGHT_T;
+                tile = TILE_ROAD_RIGHT;
             } else {
                 tile = TILE_TRANS;
             }
@@ -159,11 +181,11 @@ void tilemap_init(void) {
     // Default attribute (palette offset 0, no mirror/rotate)
     ZXN_NEXTREG(REG_TILEMAP_ATTR, 0x00);
 
-    // Set tilemap transparency: palette index 0 is transparent
+    // Set tilemap transparency: palette index 11 (bright magenta) is transparent
     // Register 0x4C controls tilemap transparency
-    // Bits 3:0 = transparent palette index (0 = index 0 is transparent)
+    // Bits 3:0 = transparent palette index
     // When a pixel has this palette index, it shows through to layer below
-    ZXN_NEXTREG(REG_TILEMAP_TRANS, 0x00);
+    ZXN_NEXTREG(REG_TILEMAP_TRANS, 0x0B);  // 11 = bright magenta
 
     // Tilemap starts disabled
 }
