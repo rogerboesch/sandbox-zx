@@ -79,9 +79,12 @@ static void tilemap_setup_palette(void) {
 }
 
 // Fill tilemap - highway in center using 2x2 tile blocks
+// Mostly white tiles with occasional magenta
 static void tilemap_fill(void) {
     uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
     uint8_t x, y;
+    uint8_t block_x, block_y;
+    uint8_t use_magenta;
 
     // Highway spans tiles 16-23 (8 tiles wide = 4 blocks of 2x2)
     for (y = 0; y < 32; y++) {
@@ -90,12 +93,27 @@ static void tilemap_fill(void) {
 
             if (x >= 16 && x <= 23) {
                 // Inside highway - use 2x2 block pattern
+                // Determine which 2x2 block we're in
+                block_x = (x - 16) >> 1;  // 0-3
+                block_y = y >> 1;         // 0-15
+
+                // Use magenta for some blocks (pseudo-random pattern)
+                use_magenta = ((block_x + block_y * 3) % 5 == 0);
+
                 if (y & 1) {
                     // Odd row: bottom tiles
-                    tile = (x & 1) ? TILE_ROAD_BR : TILE_ROAD_BL;
+                    if (use_magenta) {
+                        tile = (x & 1) ? TILE_ROAD_BR_MAG : TILE_ROAD_BL_MAG;
+                    } else {
+                        tile = (x & 1) ? TILE_ROAD_BR : TILE_ROAD_BL;
+                    }
                 } else {
                     // Even row: top tiles
-                    tile = (x & 1) ? TILE_ROAD_TR : TILE_ROAD_TL;
+                    if (use_magenta) {
+                        tile = (x & 1) ? TILE_ROAD_TR_MAG : TILE_ROAD_TL_MAG;
+                    } else {
+                        tile = (x & 1) ? TILE_ROAD_TR : TILE_ROAD_TL;
+                    }
                 }
             } else {
                 tile = TILE_TRANS;
