@@ -215,7 +215,10 @@ static uint8_t check_collision(int16_t x1, int16_t y1, uint8_t w1, uint8_t h1,
 // Tilemap constants for reading tile data
 #define TILEMAP_ADDR    0x6000
 #define TILEMAP_WIDTH   40
-#define TILE_TRANS      0x03
+#define TILE_HOLE_TL    0x04
+#define TILE_HOLE_TR    0x05
+#define TILE_HOLE_BL    0x06
+#define TILE_HOLE_BR    0x07
 
 // Check if player is over a hole in the highway
 // Returns 1 if player center is over a hole, 0 otherwise
@@ -244,8 +247,8 @@ static uint8_t check_hole_collision(void) {
     // Read tile from tilemap
     tile = tilemap[tile_y * TILEMAP_WIDTH + tile_x];
 
-    // Check if it's a transparent/hole tile
-    return (tile == TILE_TRANS) ? 1 : 0;
+    // Check if it's a hole tile (indices 4-7)
+    return (tile >= TILE_HOLE_TL && tile <= TILE_HOLE_BR) ? 1 : 0;
 }
 
 // Check all collisions

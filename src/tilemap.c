@@ -10,6 +10,10 @@
 #define TILE_ROAD_MID     0x01  // middle (L6)
 #define TILE_ROAD_RIGHT   0x02  // right border (H6)
 #define TILE_TRANS        0x03  // transparent/empty
+#define TILE_HOLE_TL      0x04  // hole top-left (K0)
+#define TILE_HOLE_TR      0x05  // hole top-right (L0)
+#define TILE_HOLE_BL      0x06  // hole bottom-left (K1)
+#define TILE_HOLE_BR      0x07  // hole bottom-right (L1)
 
 // Transparent tile (bright magenta = palette index 11 = 0xBB per byte)
 static const uint8_t tile_transparent[32] = {
@@ -19,12 +23,16 @@ static const uint8_t tile_transparent[32] = {
     0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB
 };
 
-// Tilemap tiles array (4 tiles for road)
-static const uint8_t * const tilemap_tiles[4] = {
+// Tilemap tiles array (8 tiles for road + holes)
+static const uint8_t * const tilemap_tiles[8] = {
     tile_G6,           // 0: TILE_ROAD_LEFT
     tile_L6,           // 1: TILE_ROAD_MID
     tile_H6,           // 2: TILE_ROAD_RIGHT
-    tile_transparent   // 3: TILE_TRANS
+    tile_transparent,  // 3: TILE_TRANS
+    tile_K0,           // 4: TILE_HOLE_TL
+    tile_L0,           // 5: TILE_HOLE_TR
+    tile_K1,           // 6: TILE_HOLE_BL
+    tile_L1            // 7: TILE_HOLE_BR
 };
 
 // Tilemap registers
@@ -42,7 +50,7 @@ static const uint8_t * const tilemap_tiles[4] = {
 // Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
-#define MAX_TILES       4    // 4 road tiles (4 * 32 = 128 bytes)
+#define MAX_TILES       8    // 8 tiles (8 * 32 = 256 bytes)
 
 // Scroll state
 int16_t scroll_y = 0;
@@ -129,6 +137,7 @@ static void tilemap_fill(void) {
         for (x = 0; x < 40; x++) {
             uint8_t tile;
             uint8_t is_hole = 0;
+            uint8_t hole_row_top = 0;  // 1 if top row of 2x2 hole block
 
             // Check if this tile should be a hole (half highway width)
             if (hole_active) {
@@ -137,10 +146,18 @@ static void tilemap_fill(void) {
                 } else if (hole_side == 2 && x >= 20 && x <= 23) {
                     is_hole = 1;  // Right half hole (32px)
                 }
+                // Top row of hole block (y=4 or y=12)
+                hole_row_top = (y == 4 || y == 12);
             }
 
             if (is_hole) {
-                tile = TILE_TRANS;
+                // 2x2 hole pattern: K0,L0 / K1,L1
+                uint8_t is_left_of_pair = (x & 1) == 0;  // Even x = left tile
+                if (hole_row_top) {
+                    tile = is_left_of_pair ? TILE_HOLE_TL : TILE_HOLE_TR;
+                } else {
+                    tile = is_left_of_pair ? TILE_HOLE_BL : TILE_HOLE_BR;
+                }
             } else if (x == 16) {
                 // Left border
                 tile = TILE_ROAD_LEFT;
