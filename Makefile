@@ -4,7 +4,7 @@
 COMPILER = zcc
 TARGET = +zxn
 CFLAGS = -vn -SO3 -clib=sdcc_iy -startup=31
-OUTPUT = dark_nebula
+OUTPUT = nebula8
 BIN_DIR = bin
 
 # Source files

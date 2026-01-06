@@ -21,7 +21,7 @@ static void wait_vblank(void) {
 // Draw title screen
 static void draw_title(void) {
     ula_clear();
-    ula_print_at(6, 5,  "  VOID RUNNER 16", ATTR_YELLOW_ON_BLACK);
+    ula_print_at(6, 5,  "     NEBULA 8", ATTR_YELLOW_ON_BLACK);
     ula_print_at(6, 8,  " ZX SPECTRUM NEXT", ATTR_YELLOW_ON_BLACK);
     ula_print_at(6, 12, "PRESS FIRE TO START", ATTR_WHITE_ON_BLACK);
 }
