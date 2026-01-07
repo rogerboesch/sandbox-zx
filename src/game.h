@@ -13,10 +13,10 @@
 #define GAME_LEFT       0
 #define GAME_RIGHT      240
 
-// Highway boundaries (tiles 16-23 = pixels 128-191, adjusted for tilemap offset)
-// Tilemap is offset by 4 tiles, so highway at tiles 16-23 appears at pixels 96-159
-#define HIGHWAY_LEFT    96
-#define HIGHWAY_RIGHT   160
+// Level boundaries (tiles 16-23 = pixels 128-191, adjusted for tilemap offset)
+// Tilemap is offset by 4 tiles, so level at tiles 16-23 appears at pixels 96-159
+#define LEVEL_LEFT      96
+#define LEVEL_RIGHT     160
 
 // Player constants (vertical scroller - player at bottom)
 #define PLAYER_WIDTH    16
@@ -109,7 +109,7 @@ typedef struct {
 #define CRASH_HOLE       1  // Blue flash
 #define CRASH_ENEMY      2  // Yellow flash (normal enemy)
 #define CRASH_ENEMY_FAST 3  // Red flash (fast enemy)
-#define CRASH_HIGHWAY    4  // White flash (fell off highway)
+#define CRASH_LEVEL      4  // White flash (fell off level)
 
 // Game data structure
 typedef struct {
@@ -132,11 +132,6 @@ void game_update(void);
 void game_update_dying(void);
 void game_render(void);
 void game_render_dying(void);
-void game_spawn_enemy(void);
-void game_check_collisions(void);
-void game_update_enemies(void);
-void game_update_bullets(void);
-void game_fire_bullet(void);
 int8_t game_get_shake_offset(void);
 
 // Input handling
@@ -150,10 +145,7 @@ uint8_t input_read(void);
 #define INPUT_FIRE   0x10
 #define INPUT_PAUSE  0x20
 
-// Global game data (extern declarations)
-extern Player player;
-extern Entity bullets[MAX_BULLETS];
-extern Entity enemies[MAX_ENEMIES];
+// Global game data (extern declaration)
 extern GameData game;
 
 #endif // GAME_H

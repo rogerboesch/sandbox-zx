@@ -108,7 +108,7 @@ static void tilemap_setup_palette(void) {
     ZXN_NEXTREG(0x43, 0x00);
 }
 
-// Fill tilemap - highway in center with left/middle/right borders
+// Fill tilemap in center with left/middle/right borders
 // Left border: cyan line on left, Middle: solid black, Right border: cyan line on right
 // Sporadic holes (16px wide) on left or right side that player must avoid
 static void tilemap_fill(void) {
@@ -117,7 +117,7 @@ static void tilemap_fill(void) {
     uint8_t hole_side;  // 0=no hole, 1=left hole, 2=right hole
     uint8_t hole_active;
 
-    // Highway spans tiles 16-23 (8 tiles wide)
+    // Level spans tiles 16-23 (8 tiles wide)
     // x=16: left border, x=17-19: left half, x=20-22: right half, x=23: right border
     for (y = 0; y < 32; y++) {
         // Explicit hole positions to ensure safe start and both sides
@@ -129,7 +129,8 @@ static void tilemap_fill(void) {
         if (y == 4 || y == 5) {
             hole_active = 1;
             hole_side = 2;  // Right side
-        } else if (y == 12 || y == 13) {
+        }
+        else if (y == 12 || y == 13) {
             hole_active = 1;
             hole_side = 1;  // Left side
         }
@@ -139,7 +140,7 @@ static void tilemap_fill(void) {
             uint8_t is_hole = 0;
             uint8_t hole_row_top = 0;  // 1 if top row of 2x2 hole block
 
-            // Check if this tile should be a hole (half highway width)
+            // Check if this tile should be a hole (half level width)
             if (hole_active) {
                 if (hole_side == 1 && x >= 16 && x <= 19) {
                     is_hole = 1;  // Left half hole (32px)
@@ -234,7 +235,7 @@ void tilemap_disable(void) {
     ZXN_NEXTREG(REG_TILEMAP_CTRL, 0x00);
 }
 
-// Scroll tilemap vertically (highway - full speed)
+// Scroll tilemap vertically (level - full speed)
 void tilemap_scroll(int16_t offset_y) {
     IO_NEXTREG_REG = REG_TILEMAP_YSCROLL;
     IO_NEXTREG_DAT = (uint8_t)(offset_y & 0xFF);

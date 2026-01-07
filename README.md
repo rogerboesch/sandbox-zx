@@ -1,9 +1,9 @@
 # Nebula 8
 
-A vertical-scrolling arcade game for ZX Spectrum Next. Pilot your ship along a narrow highway through the void, dodging holes and destroying enemies.
+A vertical-scrolling arcade game for ZX Spectrum Next. Pilot your ship along a narrow level through the void, dodging holes and destroying enemies.
 
 Gameplay:
-- Stay on the highway - falling off costs a life
+- Stay on the level - falling off costs a life
 - Avoid holes that appear on the road - they drain your score
 - Shoot enemies before they hit you
 - Survive as long as possible to rack up points

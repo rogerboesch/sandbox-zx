@@ -167,7 +167,7 @@ int main(void) {
                         case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
                         case CRASH_ENEMY:      flash_color = 0x06; break;  // Yellow
                         case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
-                        default:               flash_color = 0x07; break;  // White (highway)
+                        default:               flash_color = 0x07; break;  // White (level)
                     }
                     z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
                 }
@@ -193,7 +193,7 @@ int main(void) {
                 game_render_dying();
                 sound_update();
 
-                // Show "You lost" on both sides of highway
+                // Show "You lost" on both sides of level
                 ula_print_at(2, 10, "YOU LOST", ATTR_RED_ON_BLACK);
                 ula_print_at(22, 10, "YOU LOST", ATTR_RED_ON_BLACK);
 

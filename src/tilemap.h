@@ -3,16 +3,11 @@
 
 #include <stdint.h>
 
-// Highway position (centered, 64 pixels wide)
-#define HIGHWAY_WIDTH_PX  64
-#define HIGHWAY_LEFT_PX   96
-#define HIGHWAY_RIGHT_PX  160
-
 // Scroll speed
 #define SCROLL_SPEED       1
 #define PARALLAX_DIVISOR   2
 
-// Initialize tilemap with highway
+// Initialize tilemap with level
 void tilemap_init(void);
 
 // Enable/disable tilemap display

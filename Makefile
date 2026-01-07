@@ -8,10 +8,12 @@ OUTPUT = nebula8
 BIN_DIR = bin
 
 # Source files
-SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c src/sound.c
+SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c src/sound.c \
+       src/player.c src/bullet.c src/enemy.c src/collision.c
 
 # Header files
-HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprites.h src/sprite_def.h src/spriteset.h src/tileset.h src/sound.h
+HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprites.h src/sprite_def.h src/spriteset.h src/tileset.h src/sound.h \
+       src/player.h src/bullet.h src/enemy.h src/collision.h
 
 # Default target - creates NEX file for ZX Spectrum Next
 all: $(BIN_DIR)/$(OUTPUT).nex
