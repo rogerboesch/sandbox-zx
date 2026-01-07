@@ -39,7 +39,8 @@ static uint8_t get_tile_pixel(const uint8_t *tile, uint8_t px, uint8_t py) {
     uint8_t byte = tile[py * 4 + (px >> 1)];
     if (px & 1) {
         return byte & 0x0F;  // Low nibble (right pixel)
-    } else {
+    }
+    else {
         return byte >> 4;    // High nibble (left pixel)
     }
 }
@@ -80,7 +81,8 @@ static void layer2_draw_8k_bank(uint8_t l2_bank, uint8_t start_y) {
             // Select tile from 2x2 block
             if (block_y < 8) {
                 tile = (block_x < 8) ? L2_TILE_TL : L2_TILE_TR;
-            } else {
+            }
+            else {
                 tile = (block_x < 8) ? L2_TILE_BL : L2_TILE_BR;
             }
 

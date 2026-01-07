@@ -87,7 +87,8 @@ static void sprites_setup_palette(void) {
     for (i = 0; i < 256; i++) {
         if (i < 16) {
             color = zx_palette[i];
-        } else {
+        }
+        else {
             color = (uint8_t)i;  // RGB332 identity
         }
         IO_NEXTREG_DAT = color;

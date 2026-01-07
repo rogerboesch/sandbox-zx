@@ -45,7 +45,8 @@ static void draw_gameover(void) {
     // Calculate score digit count
     if (s == 0) {
         score_len = 1;
-    } else {
+    }
+    else {
         while (s > 0) {
             score_len++;
             s /= 10;
@@ -169,7 +170,8 @@ int main(void) {
                         default:               flash_color = 0x07; break;  // White (highway)
                     }
                     z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
-                } else {
+                }
+                else {
                     z80_outp(0xFE, 0x00);
                 }
                 break;
@@ -203,7 +205,8 @@ int main(void) {
                 // Border flash if still active
                 if (game.crash_timer > 0) {
                     z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
-                } else {
+                }
+                else {
                     z80_outp(0xFE, 0x00);
                 }
 

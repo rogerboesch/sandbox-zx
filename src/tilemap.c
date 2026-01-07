@@ -155,7 +155,8 @@ static void tilemap_fill(void) {
                 uint8_t is_left_of_pair = (x & 1) == 0;  // Even x = left tile
                 if (hole_row_top) {
                     tile = is_left_of_pair ? TILE_HOLE_TL : TILE_HOLE_TR;
-                } else {
+                }
+                else {
                     tile = is_left_of_pair ? TILE_HOLE_BL : TILE_HOLE_BR;
                 }
             } else if (x == 16) {
@@ -167,7 +168,8 @@ static void tilemap_fill(void) {
             } else if (x == 23) {
                 // Right border
                 tile = TILE_ROAD_RIGHT;
-            } else {
+            }
+            else {
                 tile = TILE_TRANS;
             }
             *tmap++ = tile;

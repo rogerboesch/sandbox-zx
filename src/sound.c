@@ -112,7 +112,8 @@ void sound_update(void) {
         fire_timer--;
         if (fire_timer == 0) {
             ay_write(AY_VOL_A, 0);
-        } else {
+        }
+        else {
             // Stay loud, decay at end
             ay_write(AY_VOL_A, (fire_timer > 2) ? 15 : fire_timer * 5);
         }
@@ -123,7 +124,8 @@ void sound_update(void) {
         explosion_timer--;
         if (explosion_timer == 0) {
             ay_write(AY_VOL_A, 0);
-        } else {
+        }
+        else {
             // Simple decay
             uint8_t vol = (explosion_timer > 10) ? 15 : explosion_timer;
             ay_write(AY_VOL_A, vol);
@@ -135,7 +137,8 @@ void sound_update(void) {
         hole_timer--;
         if (hole_timer == 0) {
             ay_write(AY_VOL_C, 0);
-        } else {
+        }
+        else {
             // Lower pitch as it decays, stay loud
             ay_write(AY_TONE_C_HI, 0x02 + (12 - hole_timer) / 3);
             ay_write(AY_VOL_C, (hole_timer > 4) ? 15 : hole_timer * 3);

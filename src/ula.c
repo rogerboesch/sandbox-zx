@@ -40,7 +40,8 @@ void ula_print_num(uint8_t x, uint8_t y, uint16_t num, uint8_t attr) {
 
     if (num == 0) {
         buf[i++] = '0';
-    } else {
+    }
+    else {
         while (num > 0 && i < 5) {
             buf[i++] = '0' + (num % 10);
             num /= 10;

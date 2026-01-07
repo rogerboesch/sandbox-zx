@@ -152,7 +152,8 @@ void game_spawn_enemy(void) {
                 enemies[i].type = 0;  // Basic enemy
                 enemies[i].health = 1;
                 enemies[i].dy = ENEMY_SPEED;  // Move downward
-            } else {
+            }
+            else {
                 enemies[i].type = 1;  // Tougher enemy
                 enemies[i].health = 2;
                 enemies[i].dy = ENEMY_SPEED + 1;  // Slightly faster
@@ -372,7 +373,8 @@ void game_update(void) {
     } else if (check_hole_collision()) {
         if (game.score >= 200) {
             game.score -= 200;
-        } else {
+        }
+        else {
             game.score = 0;
         }
         game.shake_timer = SHAKE_DURATION;
@@ -495,7 +497,8 @@ void game_render_dying(void) {
             uint8_t shadow_mult = (enemy_center >= HIGHWAY_LEFT && enemy_center <= HIGHWAY_RIGHT) ? 1 : 2;
             sprite_set(sprite_slot++, enemies[i].x + SHADOW_OFFSET_X * shadow_mult,
                        enemies[i].y + SHADOW_OFFSET_Y * shadow_mult, SPRITE_ENEMY_SHADOW);
-        } else {
+        }
+        else {
             sprite_hide(sprite_slot++);
         }
     }
@@ -506,7 +509,8 @@ void game_render_dying(void) {
             uint8_t frame = ((game.frame_count >> 3) + i) % ENEMY_ANIM_FRAMES;
             uint8_t pattern = SPRITE_ENEMY_BASE + frame;
             sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern);
-        } else {
+        }
+        else {
             sprite_hide(sprite_slot++);
         }
     }
@@ -525,7 +529,8 @@ void game_render(void) {
     if (player.invincible == 0 || (player.invincible & 0x04)) {
         sprite_set(sprite_slot++, player.x + SHADOW_OFFSET_X, player.y + SHADOW_OFFSET_Y, SPRITE_SHADOW);
         sprite_set(sprite_slot++, player.x, player.y, SPRITE_PLAYER);
-    } else {
+    }
+    else {
         sprite_hide(sprite_slot++);
         sprite_hide(sprite_slot++);
     }
