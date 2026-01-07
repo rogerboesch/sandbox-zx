@@ -191,6 +191,10 @@ int main(void) {
                 game_render_dying();
                 sound_update();
 
+                // Show "You lost" on both sides of highway
+                ula_print_at(2, 10, "YOU LOST", ATTR_RED_ON_BLACK);
+                ula_print_at(22, 10, "YOU LOST", ATTR_RED_ON_BLACK);
+
                 // Apply shake if still active
                 if (game.shake_timer > 0) {
                     apply_shake();
@@ -206,6 +210,9 @@ int main(void) {
                 // Wait for fire to go to game over screen
                 if ((input & INPUT_FIRE) && debounce == 0) {
                     debounce = 15;
+                    // Clear text
+                    ula_print_at(2, 10, "        ", ATTR_RED_ON_BLACK);
+                    ula_print_at(22, 10, "        ", ATTR_RED_ON_BLACK);
                     sound_stop_all();
                     game.state = STATE_GAMEOVER;
                 }

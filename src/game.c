@@ -464,6 +464,11 @@ void game_update_dying(void) {
 
     // Update frame counter for animation
     game.frame_count++;
+
+    // Spawn fewer enemies (every 120 frames instead of 60)
+    if (game.frame_count % 120 == 0) {
+        game_spawn_enemy();
+    }
 }
 
 // Render during dying state - no player, just enemies
