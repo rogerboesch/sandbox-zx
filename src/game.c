@@ -8,6 +8,7 @@
 #include "layer2.h"
 #include "tilemap.h"
 #include "ula.h"
+#include "sound.h"
 
 // Global game objects
 Player player;
@@ -127,6 +128,7 @@ void game_fire_bullet(void) {
             bullets[i].dx = 0;
             bullets[i].dy = -BULLET_SPEED;  // Move upward
             player.fire_cooldown = 8;  // Cooldown frames
+            sound_fire();
             break;
         }
     }
@@ -272,6 +274,7 @@ void game_check_collisions(void) {
                     game.enemies_killed++;
                     // Score based on enemy type
                     game.score += (enemies[j].type == 0) ? SCORE_ENEMY_NORMAL : SCORE_ENEMY_FAST;
+                    sound_explosion();
                 }
                 break;
             }
@@ -294,9 +297,11 @@ void game_check_collisions(void) {
                 // Trigger screen shake and CRASH text
                 game.shake_timer = SHAKE_DURATION;
                 game.crash_timer = CRASH_TEXT_DURATION;
+                sound_explosion();
 
                 if (player.lives == 0) {
                     game.state = STATE_GAMEOVER;
+                    sound_stop_all();
                 }
                 break;
             }
@@ -357,6 +362,7 @@ void game_update(void) {
 
             if (player.lives == 0) {
                 game.state = STATE_GAMEOVER;
+                sound_stop_all();
                 return;
             }
         }
@@ -375,6 +381,7 @@ void game_update(void) {
         game.crash_timer = CRASH_TEXT_DURATION;
         game.crash_type = CRASH_HOLE;
         hole_cooldown = 30;
+        sound_hole();
     }
 
     // Update scrolling (vertical scroll - decrement to scroll downward)

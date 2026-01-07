@@ -6,6 +6,7 @@
 #include "layer2.h"
 #include "tilemap.h"
 #include "ula.h"
+#include "sound.h"
 
 // Write to Next register
 static void nextreg(uint8_t reg, uint8_t val) {
@@ -87,6 +88,9 @@ static void init_next(void) {
 
     // Initialize sprites (palette + patterns)
     sprites_init();
+
+    // Initialize sound
+    sound_init();
 }
 
 // Enable gameplay graphics
@@ -148,6 +152,7 @@ int main(void) {
 
                 game_update();
                 game_render();
+                sound_update();
 
                 // Apply shake when shake_timer active (holes or crashes)
                 if (game.shake_timer > 0) {
