@@ -184,6 +184,33 @@ int main(void) {
                 }
                 break;
 
+            case STATE_DYING:
+                // Player dead, still on game screen
+                // Move enemies, no scrolling, hide player
+                game_update_dying();
+                game_render_dying();
+                sound_update();
+
+                // Apply shake if still active
+                if (game.shake_timer > 0) {
+                    apply_shake();
+                }
+
+                // Border flash if still active
+                if (game.crash_timer > 0) {
+                    z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
+                } else {
+                    z80_outp(0xFE, 0x00);
+                }
+
+                // Wait for fire to go to game over screen
+                if ((input & INPUT_FIRE) && debounce == 0) {
+                    debounce = 15;
+                    sound_stop_all();
+                    game.state = STATE_GAMEOVER;
+                }
+                break;
+
             case STATE_GAMEOVER:
                 // Only run setup once when entering this state
                 if (!gameover_shown) {

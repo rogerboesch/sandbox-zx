@@ -77,6 +77,7 @@ typedef enum {
     STATE_TITLE,
     STATE_PLAYING,
     STATE_PAUSED,
+    STATE_DYING,      // Player dead, still on game screen, waiting for input
     STATE_GAMEOVER,
     STATE_LEVELCOMPLETE
 } GameState;
@@ -128,7 +129,9 @@ typedef struct {
 // Function prototypes - game.c
 void game_init(void);
 void game_update(void);
+void game_update_dying(void);
 void game_render(void);
+void game_render_dying(void);
 void game_spawn_enemy(void);
 void game_check_collisions(void);
 void game_update_enemies(void);

@@ -300,8 +300,7 @@ void game_check_collisions(void) {
                 sound_explosion();
 
                 if (player.lives == 0) {
-                    game.state = STATE_GAMEOVER;
-                    sound_stop_all();
+                    game.state = STATE_DYING;
                 }
                 break;
             }
@@ -361,8 +360,7 @@ void game_update(void) {
             game.crash_type = CRASH_HIGHWAY;
 
             if (player.lives == 0) {
-                game.state = STATE_GAMEOVER;
-                sound_stop_all();
+                game.state = STATE_DYING;
                 return;
             }
         }
@@ -443,6 +441,70 @@ static void render_hud_text(void) {
     ula_print_num(6, 0, game.score, ATTR_YELLOW_ON_BLACK);
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
+}
+
+// Update during dying state - just move enemies, no scrolling
+void game_update_dying(void) {
+    uint8_t i;
+
+    // Decrement timers
+    if (game.crash_timer > 0) game.crash_timer--;
+    if (game.shake_timer > 0) game.shake_timer--;
+
+    // Move enemies (let them continue moving down)
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            enemies[i].y += enemies[i].dy;
+            // Deactivate if off screen
+            if (enemies[i].y > SCREEN_HEIGHT + 16) {
+                enemies[i].active = 0;
+            }
+        }
+    }
+
+    // Update frame counter for animation
+    game.frame_count++;
+}
+
+// Render during dying state - no player, just enemies
+void game_render_dying(void) {
+    uint8_t i;
+    uint8_t sprite_slot = 0;
+
+    // Render HUD text overlay
+    render_hud_text();
+
+    // Hide player slots (player + shadow)
+    sprite_hide(sprite_slot++);
+    sprite_hide(sprite_slot++);
+
+    // Hide bullet slots
+    for (i = 0; i < MAX_BULLETS; i++) {
+        sprite_hide(sprite_slot++);
+    }
+
+    // Render enemy shadows
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            int16_t enemy_center = enemies[i].x + (ENEMY_WIDTH / 2);
+            uint8_t shadow_mult = (enemy_center >= HIGHWAY_LEFT && enemy_center <= HIGHWAY_RIGHT) ? 1 : 2;
+            sprite_set(sprite_slot++, enemies[i].x + SHADOW_OFFSET_X * shadow_mult,
+                       enemies[i].y + SHADOW_OFFSET_Y * shadow_mult, SPRITE_ENEMY_SHADOW);
+        } else {
+            sprite_hide(sprite_slot++);
+        }
+    }
+
+    // Render enemies with animation
+    for (i = 0; i < MAX_ENEMIES; i++) {
+        if (enemies[i].active) {
+            uint8_t frame = ((game.frame_count >> 3) + i) % ENEMY_ANIM_FRAMES;
+            uint8_t pattern = SPRITE_ENEMY_BASE + frame;
+            sprite_set(sprite_slot++, enemies[i].x, enemies[i].y, pattern);
+        } else {
+            sprite_hide(sprite_slot++);
+        }
+    }
 }
 
 void game_render(void) {
