@@ -3,6 +3,7 @@
 #include "bullet.h"
 #include "enemy.h"
 #include "player.h"
+#include "level.h"
 
 // Tilemap constants for reading tile data
 #define TILEMAP_ADDR    0x6000

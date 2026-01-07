@@ -1,0 +1,175 @@
+# Level 1 - First Run
+# A beginner-friendly level introducing basic mechanics
+
+level:
+  name: "Level 1 - First Run"
+
+segments:
+  # ============================================
+  # SECTION 1: Introduction - Simple center lane
+  # ============================================
+
+  # Start with a wide, easy center lane
+  - length: 30
+    lanes: center
+    width: 4
+
+  # ============================================
+  # SECTION 2: First split - introduce both lanes
+  # ============================================
+
+  # Transition zone - lanes connect for switching
+  - length: 4
+    lanes: both
+    width: 4
+    connect: true
+
+  # Both lanes active with first obstacles
+  - length: 40
+    lanes: both
+    width: 3
+    objects:
+      - type: hole
+        lane: left
+        at: 15
+        size: partial
+
+      - type: hole
+        lane: right
+        at: 25
+        size: partial
+
+  # ============================================
+  # SECTION 3: Right lane only
+  # ============================================
+
+  # Transition to right lane
+  - length: 4
+    lanes: both
+    width: 3
+    connect: true
+
+  # Right lane with obstacles
+  - length: 30
+    lanes: right
+    width: 3
+    objects:
+      - type: hole
+        lane: right
+        at: 10
+        size: small
+
+      - type: hole
+        lane: right
+        at: 20
+        size: partial
+
+  # ============================================
+  # SECTION 4: Left lane only
+  # ============================================
+
+  # Transition to both, then to left
+  - length: 4
+    lanes: both
+    width: 3
+    connect: true
+
+  # Left lane with laser introduction
+  - length: 35
+    lanes: left
+    width: 3
+    objects:
+      - type: hole
+        lane: left
+        at: 12
+        size: partial
+
+      - type: laser
+        lane: left
+        at: 25
+
+  # ============================================
+  # SECTION 5: Both lanes with more obstacles
+  # ============================================
+
+  # Transition back to both
+  - length: 4
+    lanes: both
+    width: 3
+    connect: true
+
+  # Challenging section with alternating obstacles
+  - length: 50
+    lanes: both
+    width: 3
+    objects:
+      - type: hole
+        lane: left
+        at: 8
+        size: partial
+
+      - type: hole
+        lane: right
+        at: 16
+        size: partial
+
+      - type: laser
+        lane: left
+        at: 24
+
+      - type: hole
+        lane: right
+        at: 32
+        size: partial
+
+      - type: laser
+        lane: right
+        at: 40
+
+  # ============================================
+  # SECTION 6: Narrow finale
+  # ============================================
+
+  # Transition to narrow center lane
+  - length: 4
+    lanes: both
+    width: 2
+    connect: true
+
+  # Narrow and challenging
+  - length: 40
+    lanes: center
+    width: 2
+    objects:
+      - type: hole
+        lane: center
+        at: 10
+        size: small
+
+      - type: hole
+        lane: center
+        at: 20
+        size: small
+
+      - type: laser
+        lane: center
+        at: 30
+
+  # ============================================
+  # SECTION 7: Victory stretch
+  # ============================================
+
+  # Widen back out for finish
+  - length: 4
+    lanes: center
+    width: 4
+    connect: false
+
+  # Easy final stretch
+  - length: 30
+    lanes: center
+    width: 4
+    objects:
+      - type: powerup
+        lane: center
+        at: 15

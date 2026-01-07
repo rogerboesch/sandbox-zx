@@ -13,6 +13,8 @@
 #include "tilemap.h"
 #include "ula.h"
 #include "sound.h"
+#include "level.h"
+#include "level1.h"
 
 // Global game data
 GameData game;
@@ -62,6 +64,12 @@ uint8_t input_read(void) {
 
 // Initialize game state
 void game_init(void) {
+    // Initialize level system
+    level_init(&level1_def);
+
+    // Refresh tilemap with level data
+    tilemap_refresh();
+
     // Initialize player
     player_init();
 
@@ -146,6 +154,9 @@ void game_update(void) {
 
     // Update scrolling (vertical scroll - decrement to scroll downward)
     scroll_y -= SCROLL_SPEED;
+
+    // Update level system (advances segments based on scroll)
+    level_update(scroll_y);
 
     // Tilemap scrolls at full speed
     tilemap_scroll(scroll_y);
