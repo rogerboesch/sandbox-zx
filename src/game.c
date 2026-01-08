@@ -222,9 +222,11 @@ void game_update(void) {
 
 // Get screen shake offset (for visual effect)
 int8_t game_get_shake_offset(void) {
-    if (game.shake_timer == 0) return 0;
+    // Disabled for now
+    return 0;
+    // if (game.shake_timer == 0) return 0;
     // Alternating offset based on timer
-    return (game.shake_timer & 0x02) ? 2 : -2;
+    // return (game.shake_timer & 0x02) ? 2 : -2;
 }
 
 // Render HUD text on ULA

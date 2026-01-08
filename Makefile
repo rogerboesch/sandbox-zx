@@ -12,7 +12,7 @@ SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c 
        src/player.c src/bullet.c src/enemy.c src/collision.c src/level.c
 
 # Header files
-HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprites.h src/sprite_def.h src/spriteset.h src/tileset.h src/sound.h \
+HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprites.h src/spriteset.h src/tileset.h src/sound.h \
        src/player.h src/bullet.h src/enemy.h src/collision.h src/level.h include/level1.h
 
 # Default target - creates NEX file for ZX Spectrum Next
@@ -41,6 +41,7 @@ test: src/test_simple.c | $(BIN_DIR)
 # Tilemap test program
 test_tilemap: src/test_tilemap.c | $(BIN_DIR)
 	$(COMPILER) $(TARGET) $(CFLAGS) src/test_tilemap.c -o $(BIN_DIR)/test_tilemap -create-app -subtype=nex
+
 
 # Clean build artifacts
 clean:

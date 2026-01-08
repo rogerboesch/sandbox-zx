@@ -8,10 +8,10 @@
 
 // Tile indices for tilemap
 #define TILE_ROAD_LEFT    0x00  // left border (G6)
-#define TILE_ROAD_MID_TL  0x01  // highway middle top-left (C2)
-#define TILE_ROAD_MID_TR  0x02  // highway middle top-right (D2)
-#define TILE_ROAD_MID_BL  0x03  // highway middle bottom-left (C3)
-#define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right (D3)
+#define TILE_ROAD_MID_TL  0x01  // highway middle top-left (E0)
+#define TILE_ROAD_MID_TR  0x02  // highway middle top-right (F0)
+#define TILE_ROAD_MID_BL  0x03  // highway middle bottom-left (E1)
+#define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right (F1)
 #define TILE_ROAD_RIGHT   0x05  // right border (H6)
 #define TILE_TRANS        0x06  // transparent/empty
 #define TILE_HOLE_TL      0x07  // hole top-left (K0)
@@ -30,10 +30,10 @@ static const uint8_t tile_transparent[32] = {
 // Tilemap tiles array (11 tiles for road + holes)
 static const uint8_t * const tilemap_tiles[11] = {
     tile_G6,           // 0: TILE_ROAD_LEFT
-    tile_C2,           // 1: TILE_ROAD_MID_TL
-    tile_D2,           // 2: TILE_ROAD_MID_TR
-    tile_C3,           // 3: TILE_ROAD_MID_BL
-    tile_D3,           // 4: TILE_ROAD_MID_BR
+    tile_E0,           // 1: TILE_ROAD_MID_TL
+    tile_F0,           // 2: TILE_ROAD_MID_TR
+    tile_E1,           // 3: TILE_ROAD_MID_BL
+    tile_F1,           // 4: TILE_ROAD_MID_BR
     tile_H6,           // 5: TILE_ROAD_RIGHT
     tile_transparent,  // 6: TILE_TRANS
     tile_K0,           // 7: TILE_HOLE_TL

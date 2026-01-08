@@ -175,7 +175,7 @@ int main(void) {
                     uint8_t flash_color;
                     switch (game.crash_type) {
                         case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
-                        case CRASH_ENEMY:      flash_color = 0x06; break;  // Yellow
+                        case CRASH_ENEMY:      flash_color = 0x02; break;  // Red
                         case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
                         default:               flash_color = 0x07; break;  // White (level)
                     }

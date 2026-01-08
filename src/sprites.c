@@ -3,7 +3,6 @@
 #include <intrinsic.h>
 #include <stdint.h>
 #include "game.h"
-#include "sprite_def.h"
 #include "spriteset.h"
 
 // ZX Spectrum Next I/O ports
@@ -124,9 +123,9 @@ void sprites_upload_patterns(void) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_H0[i]);
     }
 
-    // Upload bullet sprite (slot 1)
+    // Upload bullet sprite (slot 1) - B1 from spriteset
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_bullet[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_B1[i]);
     }
 
     // Upload enemy animation frames A0-G0 (slots 2-8)
@@ -152,14 +151,14 @@ void sprites_upload_patterns(void) {
         z80_outp(SPRITE_PATTERN_PORT, sprite_G0[i]);
     }
 
-    // Upload player shadow sprite (slot 9)
+    // Upload player shadow sprite (slot 9) - A1 from spriteset
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_player_shadow[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_A1[i]);
     }
 
-    // Upload enemy shadow sprite (slot 10)
+    // Upload enemy shadow sprite (slot 10) - C1 from spriteset
     for (i = 0; i < 256; i++) {
-        z80_outp(SPRITE_PATTERN_PORT, sprite_enemy_shadow[i]);
+        z80_outp(SPRITE_PATTERN_PORT, sprite_C1[i]);
     }
 }
 
