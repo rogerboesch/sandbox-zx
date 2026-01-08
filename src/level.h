@@ -170,10 +170,10 @@ uint8_t level_is_both_lanes(void);
 uint8_t level_in_transition(void);
 
 // Generate tilemap tiles for a specific row
-// row: tilemap row (0-31)
-// scroll_y: current scroll position
+// row: tilemap row (0-31) - used for writing to tilemap memory
+// world_y: world position in pixels (0 = start of level)
 // tiles: output array of 40 tile indices
-void level_generate_row(uint8_t row, int16_t scroll_y, uint8_t* tiles);
+void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles);
 
 // Get current segment info (for debugging/display)
 uint8_t level_get_segment_index(void);

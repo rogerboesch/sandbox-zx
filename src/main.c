@@ -114,6 +114,9 @@ int main(void) {
     uint8_t debounce = 0;
     uint8_t gameover_shown = 0;
 
+    ula_clear();
+    ula_print_at(8, 10, "INITIALISING...", ATTR_WHITE_ON_BLACK);
+
     // Initialize
     init_next();
 
@@ -149,6 +152,13 @@ int main(void) {
                 else {
                     ula_print_at(2, 10, "        ", ATTR_YELLOW_ON_BLACK);
                     ula_print_at(22, 10, "        ", ATTR_YELLOW_ON_BLACK);
+                }
+
+                // R key to restart game
+                if ((input & INPUT_RESTART) && debounce == 0) {
+                    debounce = 15;
+                    game_init();
+                    break;
                 }
 
                 game_update();

@@ -30,9 +30,10 @@ uint8_t input_read(void) {
     // Read keyboard - using direct port reading
     // Q = up, A = down, O = left, P = right, Space = fire
 
-    // Row Q-T (0xFBFE)
+    // Row Q-T (0xFBFE) - Q=bit0, W=bit1, E=bit2, R=bit3, T=bit4
     keys = z80_inp(0xFBFE);
-    if (!(keys & 0x01)) result |= INPUT_UP;     // Q
+    if (!(keys & 0x01)) result |= INPUT_UP;      // Q
+    if (!(keys & 0x08)) result |= INPUT_RESTART; // R
 
     // Row A-G (0xFDFE)
     keys = z80_inp(0xFDFE);
@@ -64,10 +65,16 @@ uint8_t input_read(void) {
 
 // Initialize game state
 void game_init(void) {
+    // Reset scroll positions FIRST (before tilemap_refresh uses them)
+    scroll_y = 0;
+    layer2_scroll(0);
+    layer2_scroll_x(0);
+    tilemap_scroll(0);
+
     // Initialize level system
     level_init(&level1_def);
 
-    // Refresh tilemap with level data
+    // Refresh tilemap with level data (now scroll_y is 0)
     tilemap_refresh();
 
     // Initialize player
@@ -90,12 +97,6 @@ void game_init(void) {
     game.crash_timer = 0;
     game.crash_type = CRASH_NONE;
     game.survival_timer = 0;
-
-    // Reset scroll positions
-    scroll_y = 0;
-    layer2_scroll(0);
-    layer2_scroll_x(0);
-    tilemap_scroll(0);
 
     // Reset hole collision cooldown
     hole_cooldown = 0;

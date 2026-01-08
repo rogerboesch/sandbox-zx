@@ -138,12 +138,13 @@ int8_t game_get_shake_offset(void);
 uint8_t input_read(void);
 
 // Input bit flags
-#define INPUT_UP     0x01
-#define INPUT_DOWN   0x02
-#define INPUT_LEFT   0x04
-#define INPUT_RIGHT  0x08
-#define INPUT_FIRE   0x10
-#define INPUT_PAUSE  0x20
+#define INPUT_UP      0x01
+#define INPUT_DOWN    0x02
+#define INPUT_LEFT    0x04
+#define INPUT_RIGHT   0x08
+#define INPUT_FIRE    0x10
+#define INPUT_PAUSE   0x20
+#define INPUT_RESTART 0x40
 
 // Global game data (extern declaration)
 extern GameData game;

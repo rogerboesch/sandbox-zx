@@ -101,10 +101,12 @@ uint8_t player_check_level(void) {
 // Apply damage to player
 // Returns 1 if player died
 uint8_t player_hit(void) {
-    player.lives--;
+    // TESTING: Disable dying
+    // player.lives--;
     player.invincible = 120;  // 2 seconds of invincibility
 
-    return (player.lives == 0) ? 1 : 0;
+    // return (player.lives == 0) ? 1 : 0;
+    return 0;  // Never die for testing
 }
 
 // Reset player to center after crash

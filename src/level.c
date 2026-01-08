@@ -206,19 +206,127 @@ uint8_t level_in_transition(void) {
 
 // Tile indices (must match tilemap.c definitions)
 #define TILE_ROAD_LEFT    0x00  // left border
-#define TILE_ROAD_MID     0x01  // middle
-#define TILE_ROAD_RIGHT   0x02  // right border
-#define TILE_TRANS        0x03  // transparent
+#define TILE_ROAD_MID_TL  0x01  // highway middle top-left
+#define TILE_ROAD_MID_TR  0x02  // highway middle top-right
+#define TILE_ROAD_MID_BL  0x03  // highway middle bottom-left
+#define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right
+#define TILE_ROAD_RIGHT   0x05  // right border
+#define TILE_TRANS        0x06  // transparent
 
-// Generate tilemap tiles for a specific row
-void level_generate_row(uint8_t row, int16_t scroll_y, uint8_t* tiles) {
+// Calculate which segment a world-Y position belongs to
+// Returns segment index, or 0xFF if beyond level end
+// Also calculates lane boundaries for that segment
+static uint8_t get_segment_at_world_y(int16_t world_y,
+                                       uint8_t* out_lanes,
+                                       int16_t* out_l_left, int16_t* out_l_right,
+                                       int16_t* out_r_left, int16_t* out_r_right) {
+    const LevelSegment* seg;
+    int16_t accumulated_blocks = 0;
+    uint8_t i;
+    uint8_t lanes, width;
+    int16_t width_px, half_width, gap_px;
+
+    // world_y = distance in pixels from the start of the level
+    // world_y = 0 at level start, increases as we progress
+    // world_y = 500 means 500 pixels into the level
+
+    int16_t distance_blocks;
+    if (world_y < 0) {
+        distance_blocks = 0;
+    } else {
+        distance_blocks = world_y / BLOCK_SIZE_PX;
+    }
+
+    // Walk through segments to find which one contains this position
+    for (i = 0; i < level_state.def->segment_count; i++) {
+        seg = &level_state.def->segments[i];
+        if (seg->length == 0) break;  // End marker
+
+        if (distance_blocks < accumulated_blocks + seg->length) {
+            // Found the segment
+            lanes = SEGMENT_LANES(seg->config);
+            width = SEGMENT_WIDTH(seg->config);
+
+            // Calculate boundaries for this segment
+            width_px = width * BLOCK_SIZE_PX;
+            half_width = width_px / 2;
+            gap_px = GAP_BLOCKS * BLOCK_SIZE_PX / 2;
+
+            *out_lanes = lanes;
+
+            switch (lanes) {
+                case LANE_CENTER:
+                    *out_l_left = SCREEN_CENTER_PX - half_width;
+                    *out_l_right = SCREEN_CENTER_PX + half_width;
+                    *out_r_left = 0;
+                    *out_r_right = 0;
+                    break;
+
+                case LANE_LEFT:
+                    *out_l_right = SCREEN_CENTER_PX - gap_px;
+                    *out_l_left = *out_l_right - width_px;
+                    *out_r_left = 0;
+                    *out_r_right = 0;
+                    break;
+
+                case LANE_RIGHT:
+                    *out_l_left = SCREEN_CENTER_PX + gap_px;
+                    *out_l_right = *out_l_left + width_px;
+                    *out_r_left = 0;
+                    *out_r_right = 0;
+                    break;
+
+                case LANE_BOTH:
+                    *out_l_right = SCREEN_CENTER_PX - gap_px;
+                    *out_l_left = *out_l_right - width_px;
+                    *out_r_left = SCREEN_CENTER_PX + gap_px;
+                    *out_r_right = *out_r_left + width_px;
+                    break;
+            }
+
+            return i;
+        }
+        accumulated_blocks += seg->length;
+    }
+
+    // Beyond end of level - use last segment config
+    *out_lanes = level_state.current_lanes;
+    *out_l_left = level_state.left_lane_left;
+    *out_l_right = level_state.left_lane_right;
+    *out_r_left = level_state.right_lane_left;
+    *out_r_right = level_state.right_lane_right;
+    return 0xFF;
+}
+
+// Helper: get the correct middle tile for 2x2 highway pattern
+static uint8_t get_mid_tile(uint8_t col, int16_t world_y) {
+    // 2x2 pattern based on column and row (world_y / 8)
+    uint8_t row_parity = (world_y / 8) & 1;
+    uint8_t col_parity = col & 1;
+
+    if (row_parity == 0) {
+        return col_parity ? TILE_ROAD_MID_TR : TILE_ROAD_MID_TL;
+    } else {
+        return col_parity ? TILE_ROAD_MID_BR : TILE_ROAD_MID_BL;
+    }
+}
+
+// Generate tilemap tiles for a specific row at a specific world position
+void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles) {
     uint8_t i;
     uint8_t left_start, left_end;
+    uint8_t lanes;
+    int16_t l_left, l_right, r_left, r_right;
 
-    // Clear row to transparent (tile 3, not 0!)
+    // Clear row to transparent
     for (i = 0; i < 40; i++) {
         tiles[i] = TILE_TRANS;
     }
+
+    // Get segment configuration for this world position
+    get_segment_at_world_y(world_y, &lanes, &l_left, &l_right, &r_left, &r_right);
+
+    (void)row;  // Row index not needed, world_y determines content
 
     // Calculate tile positions from pixel boundaries
     // Tilemap tiles are 8px each, boundaries are in pixels
@@ -226,27 +334,27 @@ void level_generate_row(uint8_t row, int16_t scroll_y, uint8_t* tiles) {
 
     // Convert pixel boundaries to tile indices
     // Screen pixel X -> tilemap tile = (X / 8) + 4
-    left_start = (uint8_t)((level_state.left_lane_left / 8) + 4);
-    left_end = (uint8_t)((level_state.left_lane_right / 8) + 4);
+    left_start = (uint8_t)((l_left / 8) + 4);
+    left_end = (uint8_t)((l_right / 8) + 4);
 
     // Clamp to valid tile range
     if (left_start > 39) left_start = 39;
     if (left_end > 40) left_end = 40;
     if (left_end <= left_start) return;  // Invalid range
 
-    // Fill lane tiles: left edge, middle tiles, right edge
+    // Fill lane tiles: left edge, middle tiles (2x2 pattern), right edge
     tiles[left_start] = TILE_ROAD_LEFT;
     for (i = left_start + 1; i < left_end - 1; i++) {
-        tiles[i] = TILE_ROAD_MID;
+        tiles[i] = get_mid_tile(i, world_y);
     }
     if (left_end > left_start + 1) {
         tiles[left_end - 1] = TILE_ROAD_RIGHT;
     }
 
     // Handle LANE_BOTH - add right lane
-    if (level_state.current_lanes == LANE_BOTH) {
-        uint8_t right_start = (uint8_t)((level_state.right_lane_left / 8) + 4);
-        uint8_t right_end = (uint8_t)((level_state.right_lane_right / 8) + 4);
+    if (lanes == LANE_BOTH) {
+        uint8_t right_start = (uint8_t)((r_left / 8) + 4);
+        uint8_t right_end = (uint8_t)((r_right / 8) + 4);
 
         // Clamp to valid tile range
         if (right_start > 39) right_start = 39;
@@ -256,30 +364,13 @@ void level_generate_row(uint8_t row, int16_t scroll_y, uint8_t* tiles) {
             // Fill right lane tiles
             tiles[right_start] = TILE_ROAD_LEFT;
             for (i = right_start + 1; i < right_end - 1; i++) {
-                tiles[i] = TILE_ROAD_MID;
+                tiles[i] = get_mid_tile(i, world_y);
             }
             if (right_end > right_start + 1) {
                 tiles[right_end - 1] = TILE_ROAD_RIGHT;
             }
-
-            // Handle transition - connect the lanes
-            if (level_state.in_transition) {
-                // Fill the gap between lanes with middle tiles
-                for (i = left_end; i < right_start; i++) {
-                    tiles[i] = TILE_ROAD_MID;
-                }
-                // Fix edges at connection points
-                if (left_end > 0 && left_end <= 39) {
-                    tiles[left_end - 1] = TILE_ROAD_MID;  // Was right edge, now middle
-                }
-                tiles[right_start] = TILE_ROAD_MID;  // Was left edge, now middle
-            }
         }
     }
-
-    // TODO: Check for objects at this row and modify tiles accordingly
-    (void)scroll_y;
-    (void)row;
 }
 
 // Get current segment info (for debugging/display)

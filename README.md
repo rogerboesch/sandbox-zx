@@ -24,3 +24,5 @@ Scoring:
 ## TODO
 
 - [ ] Add remaining sprites from sprite_def.h to spriteset.png
+- [ ] Fix player shadow
+- [ ] Allow to animate  in sprite editor

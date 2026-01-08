@@ -38,6 +38,10 @@ sna: $(SRCS) src/game.h | $(BIN_DIR)
 test: src/test_simple.c | $(BIN_DIR)
 	$(COMPILER) $(TARGET) $(CFLAGS) src/test_simple.c -o $(BIN_DIR)/test -create-app -subtype=nex
 
+# Tilemap test program
+test_tilemap: src/test_tilemap.c | $(BIN_DIR)
+	$(COMPILER) $(TARGET) $(CFLAGS) src/test_tilemap.c -o $(BIN_DIR)/test_tilemap -create-app -subtype=nex
+
 # Clean build artifacts
 clean:
 	rm -rf $(BIN_DIR)
@@ -67,4 +71,4 @@ CSPECT = $(CSPECT_DIR)/CSpect.exe
 start: $(BIN_DIR)/$(OUTPUT).nex
 	cd $(CSPECT_DIR) && mono $(CSPECT) -w4 -vsync -s28 -tv -basickeys -zxnext -nextrom "$(CURDIR)/$(BIN_DIR)/$(OUTPUT).nex"
 
-.PHONY: all clean run tap sna test start
+.PHONY: all clean run tap sna test test_tilemap start
