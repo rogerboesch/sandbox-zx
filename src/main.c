@@ -252,6 +252,22 @@ int main(void) {
                 }
                 break;
 
+            case STATE_LEVELCOMPLETE:
+                // Show level win message
+                ula_print_at(2, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                ula_print_at(21, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+
+                // Wait for fire to restart
+                if ((input & INPUT_FIRE) && debounce == 0) {
+                    debounce = 10;
+                    // Clear text
+                    ula_print_at(2, 10, "         ", ATTR_GREEN_ON_BLACK);
+                    ula_print_at(21, 10, "         ", ATTR_GREEN_ON_BLACK);
+                    // Restart game (could advance to next level later)
+                    game_init();
+                }
+                break;
+
             default:
                 break;
         }

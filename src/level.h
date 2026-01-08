@@ -134,6 +134,7 @@ typedef struct {
 
     // Scroll tracking for row generation
     int16_t last_scroll_y;       // Last scroll position (for detecting new rows)
+    int16_t scroll_accumulator;  // Accumulated scroll pixels (for block counting)
 
 } LevelState;
 
@@ -168,6 +169,9 @@ uint8_t level_is_both_lanes(void);
 
 // Check if player is in transition zone (can switch lanes)
 uint8_t level_in_transition(void);
+
+// Check if level is complete (reached end of last segment)
+uint8_t level_is_complete(void);
 
 // Generate tilemap tiles for a specific row
 // row: tilemap row (0-31) - used for writing to tilemap memory

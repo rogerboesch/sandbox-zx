@@ -83,7 +83,7 @@ static const LevelObject level1_objects[] = {
 
 static const LevelDef level1_def = {
     "LEVEL 1",
-    14,                     // segment_count (excluding end marker)
+    13,                     // segment_count (excluding end marker)
     15,                     // object_count
     level1_segments,
     level1_objects

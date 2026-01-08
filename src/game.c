@@ -196,6 +196,12 @@ void game_update(void) {
         }
     }
 
+    // Check for level complete
+    if (level_is_complete()) {
+        game.state = STATE_LEVELCOMPLETE;
+        return;
+    }
+
     // Spawn enemies periodically
     game.frame_count++;
     if (game.frame_count % 60 == 0) {
@@ -235,6 +241,14 @@ static void render_hud_text(void) {
     ula_print_num(6, 0, game.score, ATTR_YELLOW_ON_BLACK);
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
+
+    // Debug: show segment and block counter
+    ula_print_at(0, 22, "SEG:", ATTR_WHITE_ON_BLACK);
+    ula_print_num(4, 22, level_get_segment_index() + 1, ATTR_YELLOW_ON_BLACK);
+    ula_print_at(7, 22, "/", ATTR_WHITE_ON_BLACK);
+    ula_print_num(8, 22, level_state.def->segment_count, ATTR_YELLOW_ON_BLACK);
+    ula_print_at(0, 23, "BLK:", ATTR_WHITE_ON_BLACK);
+    ula_print_num(4, 23, level_get_blocks_remaining(), ATTR_YELLOW_ON_BLACK);
 }
 
 // Update during dying state - just move enemies, no scrolling

@@ -18,6 +18,8 @@
 #define TILE_HOLE_TR      0x08  // hole top-right (L0)
 #define TILE_HOLE_BL      0x09  // hole bottom-left (K1)
 #define TILE_HOLE_BR      0x0A  // hole bottom-right (L1)
+#define TILE_LANE_MARK    0x0B  // lane marker (I4)
+#define TILE_LANE_EDGE    0x0C  // lane start/end marker (J4)
 
 // Transparent tile (bright magenta = palette index 11 = 0xBB per byte)
 static const uint8_t tile_transparent[32] = {
@@ -27,8 +29,8 @@ static const uint8_t tile_transparent[32] = {
     0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB
 };
 
-// Tilemap tiles array (11 tiles for road + holes)
-static const uint8_t * const tilemap_tiles[11] = {
+// Tilemap tiles array (13 tiles for road + holes + lane markers)
+static const uint8_t * const tilemap_tiles[13] = {
     tile_G6,           // 0: TILE_ROAD_LEFT
     tile_E0,           // 1: TILE_ROAD_MID_TL
     tile_F0,           // 2: TILE_ROAD_MID_TR
@@ -39,7 +41,9 @@ static const uint8_t * const tilemap_tiles[11] = {
     tile_K0,           // 7: TILE_HOLE_TL
     tile_L0,           // 8: TILE_HOLE_TR
     tile_K1,           // 9: TILE_HOLE_BL
-    tile_L1            // 10: TILE_HOLE_BR
+    tile_L1,           // 10: TILE_HOLE_BR
+    tile_I4,           // 11: TILE_LANE_MARK
+    tile_J4            // 12: TILE_LANE_EDGE
 };
 
 // Tilemap registers
@@ -57,7 +61,7 @@ static const uint8_t * const tilemap_tiles[11] = {
 // Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
-#define MAX_TILES       11   // 11 tiles (11 * 32 = 352 bytes)
+#define MAX_TILES       13   // 13 tiles (13 * 32 = 416 bytes)
 #define TILEMAP_WIDTH   40   // 40 tiles wide
 
 // Scroll state
