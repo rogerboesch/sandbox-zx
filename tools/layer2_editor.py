@@ -148,6 +148,9 @@ class Layer2Editor:
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 18)
 
+        # Mouse hover position (canvas coordinates, or None if not over image)
+        self.hover_pos = None
+
     def load_image(self, path):
         """Load and convert image to Layer2 format (preserving size)"""
         img = pygame.image.load(path)
@@ -453,7 +456,8 @@ class Layer2Editor:
 
         # === Info area ===
         info_y = palette_y + color_size + 10
-        color_info = f"Color {self.selected_color}: {ZX_COLOR_NAMES[self.selected_color]} | Size: {self.width}x{self.height} | Zoom: ({self.zoom_x},{self.zoom_y})"
+        pos_str = f"Pos: ({self.hover_pos[0]},{self.hover_pos[1]})" if self.hover_pos else "Pos: --"
+        color_info = f"Color {self.selected_color}: {ZX_COLOR_NAMES[self.selected_color]} | Size: {self.width}x{self.height} | {pos_str}"
         label = self.font.render(color_info, True, (200, 200, 200))
         self.screen.blit(label, (self.padding, info_y))
 
@@ -566,9 +570,31 @@ class Layer2Editor:
                         last_paint_pos = None
 
                 elif event.type == pygame.MOUSEMOTION:
-                    if mouse_down:
-                        mx, my = event.pos
+                    mx, my = event.pos
 
+                    # Update hover position
+                    self.hover_pos = None
+
+                    # Check if over main image
+                    if (image_x <= mx < image_x + self.image_display_width and
+                        image_y <= my < image_y + self.image_display_height):
+                        cx = (mx - image_x) // self.image_scale
+                        cy = (my - image_y) // self.image_scale
+                        if 0 <= cx < self.width and 0 <= cy < self.height:
+                            self.hover_pos = (cx, cy)
+
+                    # Check if over zoom grid
+                    elif (zoom_grid_x <= mx < zoom_grid_x + self.zoom_display_size and
+                          zoom_grid_y <= my < zoom_grid_y + self.zoom_display_size):
+                        gx = (mx - zoom_grid_x) // ZOOM_SCALE
+                        gy = (my - zoom_grid_y) // ZOOM_SCALE
+                        canvas_x = self.zoom_x + gx
+                        canvas_y = self.zoom_y + gy
+                        if 0 <= canvas_x < self.width and 0 <= canvas_y < self.height:
+                            self.hover_pos = (canvas_x, canvas_y)
+
+                    # Handle painting while dragging
+                    if mouse_down:
                         # Only paint in zoom grid
                         if (zoom_grid_x <= mx < zoom_grid_x + self.zoom_display_size and
                             zoom_grid_y <= my < zoom_grid_y + self.zoom_display_size):

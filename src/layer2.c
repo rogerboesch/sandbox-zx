@@ -263,6 +263,7 @@ static void layer2_draw_border_from_bank(uint8_t x, uint8_t y, uint8_t mirror) {
     const uint8_t *src;
     uint8_t old_slot2, old_slot3;
     uint16_t src_offset;
+    uint8_t pixel;
 
     // Save current MMU banks
     IO_NEXTREG_REG = MMU_SLOT2_REG;
@@ -281,10 +282,6 @@ static void layer2_draw_border_from_bank(uint8_t x, uint8_t y, uint8_t mirror) {
         // Determine destination Layer 2 bank (each bank = 32 lines)
         l2_bank = 16 + (screen_y / 32);
 
-        // Determine source page (page 40 or 41 depending on offset)
-        // Each 8K page holds 8192 bytes
-        src_page = 40 + (src_offset / 8192);
-
         // Remap destination bank if changed
         if (l2_bank != last_l2_bank) {
             IO_NEXTREG_REG = MMU_SLOT2_REG;
@@ -292,28 +289,30 @@ static void layer2_draw_border_from_bank(uint8_t x, uint8_t y, uint8_t mirror) {
             last_l2_bank = l2_bank;
         }
 
-        // Remap source page if changed
-        if (src_page != last_src_page) {
-            IO_NEXTREG_REG = MMU_SLOT3_REG;
-            IO_NEXTREG_DAT = src_page;
-            last_src_page = src_page;
-        }
-
-        // Calculate addresses
         dst = (uint8_t *)0x4000 + ((screen_y % 32) * 256) + x;
-        src = (const uint8_t *)0x6000 + (src_offset % 8192);
 
-        // Copy row (mirrored or normal)
-        if (mirror) {
-            for (col = 0; col < BORDER_IMAGE_WIDTH; col++) {
-                dst[col] = src[BORDER_IMAGE_WIDTH - 1 - col];
+        // Copy row pixel by pixel, handling page boundary mid-row
+        for (col = 0; col < BORDER_IMAGE_WIDTH; col++) {
+            // Check if we need to switch source page
+            src_page = 40 + (src_offset / 8192);
+            if (src_page != last_src_page) {
+                IO_NEXTREG_REG = MMU_SLOT3_REG;
+                IO_NEXTREG_DAT = src_page;
+                last_src_page = src_page;
             }
-        } else {
-            for (col = 0; col < BORDER_IMAGE_WIDTH; col++) {
-                dst[col] = src[col];
+
+            // Read pixel from source
+            src = (const uint8_t *)0x6000 + (src_offset % 8192);
+            pixel = *src;
+            src_offset++;
+
+            // Write to destination (handle mirror)
+            if (mirror) {
+                dst[BORDER_IMAGE_WIDTH - 1 - col] = pixel;
+            } else {
+                dst[col] = pixel;
             }
         }
-        src_offset += BORDER_IMAGE_WIDTH;
     }
 
     // Restore original banks
