@@ -19,6 +19,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 ART_DIR="$SCRIPT_DIR"
 TOOLS_DIR="$PROJECT_DIR/tools"
+SRC_DIR="$PROJECT_DIR/src"
 
 # 8x8 tiles (default)
 python3 "$TOOLS_DIR/tilemap_grid.py" "$ART_DIR/tileset.png" "$ART_DIR/tileset_grid.png"
@@ -29,3 +30,6 @@ python3 "$TOOLS_DIR/tilemap_grid.py" "$ART_DIR/spriteset.png" "$ART_DIR/spritese
 # Create header files
 python3 "$TOOLS_DIR/tiles_to_header.py" "$ART_DIR/tileset.png" tile 7
 python3 "$TOOLS_DIR/tiles_to_header.py" "$ART_DIR/spriteset.png" sprite 2
+
+# Create mem bank for image(s)
+python3 "$TOOLS_DIR/png_to_asm.py" "$ART_DIR/border.png" 40 "$SRC_DIR/border_data.asm"

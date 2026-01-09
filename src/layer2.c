@@ -334,8 +334,8 @@ void layer2_init(void) {
     IO_NEXTREG_REG = 0x12;
     IO_NEXTREG_DAT = 8;
 
-    // Fill with white background (256x192 = 6 banks)
-    layer2_clear(0xFF);
+    // Fill with black background (256x192 = 6 banks)
+    layer2_clear(0x00);
 
     // Draw left border image from bank 40
     layer2_draw_border_from_bank(0, 0, 0);
