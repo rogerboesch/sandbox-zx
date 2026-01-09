@@ -205,8 +205,8 @@ int main(void) {
                 // Show "You lost" once when entering this state
                 if (!state_text_shown) {
                     state_text_shown = 1;
-                    ula_print_at(2, 10, "YOU LOST", ATTR_RED_ON_BLACK);
-                    ula_print_at(22, 10, "YOU LOST", ATTR_RED_ON_BLACK);
+                    ula_print_at(2, 10, "YOU LOST", ATTR_WHITE_ON_RED);
+                    ula_print_at(22, 10, "YOU LOST", ATTR_WHITE_ON_RED);
                 }
 
                 // Player dead, still on game screen
