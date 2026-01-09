@@ -321,8 +321,8 @@ void set_layers_gameplay(void) {
     // We want: Sprites above Tilemap, Layer 2 at bottom
     // Use S U L = 010 which gives: Sprites on top, then ULA/Tilemap, then Layer2
     // 010 in bits 4:2 = 0b00001000 = 0x08
-    // Add sprites visible (0x01) and over border (0x02) = 0x0B
-    ZXN_NEXTREG(0x15, 0x0B);  // 0b00001011 = S U L order, sprites visible and over border
+    // Add sprites visible (0x01) only - no over border
+    ZXN_NEXTREG(0x15, 0x09);  // 0b00001001 = S U L order, sprites visible
 
     // Register 0x14: Global Transparency Color
     // Black (0x00) is transparent so ULA shows layers below
@@ -337,14 +337,6 @@ void set_layers_menu(void) {
     // U L S order (101) - ULA on top
     // Bit 0 = 0 (sprites disabled)
     ZXN_NEXTREG(0x15, 0x14);  // 0b00010100 = U L S, no sprites
-
-    // Disable global transparency so ULA colors show correctly
-    ZXN_NEXTREG(0x14, 0xE3);  // Set to bright magenta (unlikely to be used)
-
-    // Reset ULA palette control to standard mode
-    ZXN_NEXTREG(0x43, 0x00);  // Select ULA palette, no ULANext
-    ZXN_NEXTREG(0x42, 0x00);  // ULA palette offset = 0
-    ZXN_NEXTREG(0x68, 0x00);  // Disable ULA+
 }
 
 // Get tile index at screen position

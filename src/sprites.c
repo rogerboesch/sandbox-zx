@@ -100,18 +100,8 @@ static void sprites_setup_palette(void) {
 
 // Initialize sprite system
 void sprites_init(void) {
-    // Enable sprites, sprites visible, over border, sprite clipping enabled
-    // Bit 0: sprites visible, Bit 1: over border, Bit 5: clip to clip window
-    nextreg_write(NEXTREG_SPRITE_SYSTEM, 0x23);
-
-    // Set sprite clip window (register 0x19)
-    // Clip to 256x192 game area (in 320x256 space, game starts at 32,32)
-    // X: 32 to 32+255 = 287, but max is 255 in low byte, need X1/X2
-    // Y: 32 to 32+191 = 223
-    nextreg_write(0x19, 32);   // X1 = 32 (left edge)
-    nextreg_write(0x19, 191);  // X2 = 191 (right edge, game width 160px)
-    nextreg_write(0x19, 32);   // Y1 = 32 (top edge)
-    nextreg_write(0x19, 223);  // Y2 = 223 (bottom edge)
+    // Enable sprites, sprites visible, over border
+    nextreg_write(NEXTREG_SPRITE_SYSTEM, 0x03);
 
     // Set up sprite palette
     sprites_setup_palette();
