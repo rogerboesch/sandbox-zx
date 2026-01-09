@@ -6,95 +6,65 @@ This document covers how to store large data (like images) in separate memory ba
 
 ## PNG to Working Binary: Step-by-Step
 
-### 1. Create the Image
+### 1. Create/Edit the Image
 
-- Use `layer2_editor.py` tool to create/edit the image
-- Export as header file (`layer2_image.h`) containing RGB332 pixel data
-- Image dimensions: 60x191 pixels = 11460 bytes
-
-### 2. Extract Binary from Header
-
-The `tools/extract_image_bin.py` script extracts raw bytes from the header file:
+Use `tools/layer2_editor.py` to create or edit the image:
 
 ```bash
-python3 tools/extract_image_bin.py src/layer2_image.h bin/border_image.bin
+~/venv/bin/python3 tools/layer2_editor.py art/border.png
 ```
 
-### 3. Split Binary into 8K Chunks
+- Image height must be exactly 192 pixels
+- Image width can be 1-256 pixels
+- Save with Shift+S
 
-Each memory page is 8192 bytes, so split the binary:
+### 2. Convert PNG to Assembly
+
+Use `tools/png_to_asm.py` to convert the PNG directly to assembly:
 
 ```bash
-head -c 8192 bin/border_image.bin > src/border_bank40.bin
-tail -c +8193 bin/border_image.bin > src/border_bank41.bin
+~/venv/bin/python3 tools/png_to_asm.py art/border.png 40 src/border_data.asm
 ```
 
-### 4. Convert Binary to Assembly defb Statements
+Parameters:
+- `art/border.png` - Source PNG file
+- `40` - Starting page number (8K pages)
+- `src/border_data.asm` - Output assembly file
 
-The `BINARY` directive did NOT work reliably. Convert binaries to inline `defb`:
+The script will:
+- Validate image height is 192 pixels
+- Convert to RGB332 format
+- Split into 8K pages automatically
+- Generate defb statements
 
-```python
-# Python snippet to convert binary to defb
-with open('src/border_bank40.bin', 'rb') as f:
-    data = f.read()
-
-for i in range(0, len(data), 16):
-    chunk = data[i:i+16]
-    hex_bytes = ', '.join(f'0x{b:02x}' for b in chunk)
-    print(f'    defb {hex_bytes}')
-```
-
-### 5. Create Assembly File
-
-Create `src/border_data.asm`:
-
-```asm
-SECTION PAGE_40
-PUBLIC _border_image_bank40
-_border_image_bank40:
-    defb 0x18, 0x18, 0x18, ...
-
-SECTION PAGE_41
-PUBLIC _border_image_bank41
-_border_image_bank41:
-    defb 0x00, 0x00, 0x00, ...
-```
-
-### 6. Add to Makefile
+### 3. Add to Makefile
 
 ```makefile
 ASMS = src/border_data.asm
-
-$(BIN_DIR)/$(OUTPUT).nex: $(SRCS) $(ASMS) $(HDRS)
-    $(COMPILER) $(TARGET) $(CFLAGS) $(SRCS) $(ASMS) -o $(BIN_DIR)/$(OUTPUT) -create-app -subtype=nex
 ```
 
-### 7. Force Linker Inclusion in C
-
-Add extern declarations and dummy reference:
+### 4. Add Extern Declarations in C
 
 ```c
-extern uint8_t border_image_bank40;
-extern uint8_t border_image_bank41;
+extern uint8_t border_page40;
+extern uint8_t border_page41;
 
 void force_include(void) {
-    volatile uint8_t *ptr = &border_image_bank40;
-    ptr = &border_image_bank41;
+    volatile uint8_t *ptr = &border_page40;
+    ptr = &border_page41;
     (void)ptr;
 }
 ```
 
-### 8. Access Data at Runtime
+### 5. Build
 
-Map the page to slot 3 (0x6000) and read:
+```bash
+make
+```
 
-```c
-// Map page 40 to slot 3
-IO_NEXTREG_REG = 0x53;  // MMU slot 3 register
-IO_NEXTREG_DAT = 40;    // Page number
-
-// Read from 0x6000
-const uint8_t *src = (const uint8_t *)0x6000;
+Verify output shows bank usage:
+```
+Bank 20, 4864 tail bytes free
 ```
 
 ---
@@ -129,7 +99,7 @@ Do NOT use slots 6-7 (0xC000-0xFFFF) - they may have ROM mapped and will cause s
 
 When banking works correctly, you'll see:
 ```
-Bank 20, 4924 tail bytes free
+Bank 20, 4864 tail bytes free
 ```
 
 If banks show "8192 tail bytes free", the data wasn't included.
@@ -153,9 +123,9 @@ if (src_page != last_src_page) {
 
 ## Layer 2 Border Image Implementation
 
-The border image (60x191 pixels, 11460 bytes RGB332) is stored across pages 40-41:
+The border image (60x192 pixels, 11520 bytes RGB332) is stored across pages 40-41:
 - Page 40: first 8192 bytes
-- Page 41: remaining 3268 bytes
+- Page 41: remaining 3328 bytes
 
 Drawing process:
 1. Save current MMU slot states

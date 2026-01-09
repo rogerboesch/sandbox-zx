@@ -4,11 +4,9 @@ Layer2 Image Editor for ZX Spectrum Next
 - Open PNG images and convert to Layer2 format (8-bit RGB332)
 - Supports any size up to 256x192 (preserves original dimensions)
 - Paint with 16 ZX Spectrum colors in zoomed 32x32 grid
-- Export as C header file for inclusion in game
 
-Usage: python3 layer2_editor.py <input.png> [output_name]
+Usage: python3 layer2_editor.py <input.png>
   input.png: Source PNG image (max 256x192, keeps original size)
-  output_name: Name for the image (default: layer2_image)
 
 Controls:
   Click on image: Select 32x32 area to edit in zoom grid
@@ -19,10 +17,11 @@ Controls:
   Click on palette: Select color
   Arrow keys: Resize image (Right +width, Down +height, Left -width, Up -height)
   WASD: Move zoom selection
-  S: Save PNG (use Shift+S)
-  E: Export to header file
+  Shift+S: Save PNG
   Z: Undo
   ESC: Quit
+
+To convert PNG to ASM for banking, use: tools/png_to_asm.py
 """
 
 import pygame
@@ -88,11 +87,10 @@ ZX_COLOR_NAMES = [
 
 
 class Layer2Editor:
-    def __init__(self, input_path=None, output_name="layer2_image"):
+    def __init__(self, input_path=None):
         pygame.init()
 
         self.input_path = input_path
-        self.output_name = output_name
         self.selected_color = 0
         self.undo_stack = []
         self.max_undo = 20
@@ -346,125 +344,9 @@ class Layer2Editor:
         if self.input_path:
             path = self.input_path
         else:
-            path = f"{self.output_name}.png"
+            path = "layer2_image.png"
         pygame.image.save(self.canvas, path)
         print(f"Saved: {path}")
-
-    def export_header(self):
-        """Export canvas as C header file"""
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        src_dir = os.path.join(os.path.dirname(script_dir), 'src')
-        output_path = os.path.join(src_dir, f'{self.output_name}.h')
-
-        total_size = self.width * self.height
-        name_upper = self.output_name.upper()
-
-        # Build header content
-        guard_name = name_upper + '_H'
-        output = f'''#ifndef {guard_name}
-#define {guard_name}
-
-#include <stdint.h>
-
-// Layer2 image: {self.output_name}
-// Resolution: {self.width}x{self.height} (8-bit RGB332)
-// Total size: {total_size} bytes
-//
-// RGB332 format: RRRGGGBB
-// ZX Spectrum 16-color palette mapped to RGB332
-
-#define {name_upper}_WIDTH {self.width}
-#define {name_upper}_HEIGHT {self.height}
-#define {name_upper}_SIZE {total_size}
-
-'''
-
-        # For full-screen images, use bank layout
-        if self.width == LAYER2_MAX_WIDTH and self.height == LAYER2_MAX_HEIGHT:
-            output += f'#define {name_upper}_BANK_SIZE 8192\n'
-            output += f'#define {name_upper}_NUM_BANKS 6\n\n'
-
-            # Generate data for each bank (32 lines each)
-            for bank in range(6):
-                start_line = bank * 32
-                end_line = start_line + 32
-                bank_name = f'{self.output_name}_bank{bank}'
-
-                output += f'// Bank {bank}: lines {start_line}-{end_line - 1}\n'
-                output += f'static const uint8_t {bank_name}[8192] = {{\n'
-
-                for y in range(start_line, end_line):
-                    row_data = []
-                    for x in range(self.width):
-                        rgb = self.canvas.get_at((x, y))[:3]
-                        idx = self.get_nearest_color_index(rgb)
-                        rgb332 = ZX_TO_RGB332[idx]
-                        row_data.append(f'0x{rgb332:02X}')
-
-                    # Split into groups of 16 for readability
-                    for i in range(0, self.width, 16):
-                        chunk = row_data[i:i + 16]
-                        is_last = (y == end_line - 1) and (i + 16 >= self.width)
-                        comma = '' if is_last else ','
-                        output += f'    {",".join(chunk)}{comma}\n'
-
-                output += '};\n\n'
-
-            # Generate bank pointer array
-            output += f'// Array of bank pointers for easy access\n'
-            output += f'static const uint8_t * const {self.output_name}_banks[6] = {{\n'
-            for bank in range(6):
-                comma = ',' if bank < 5 else ''
-                output += f'    {self.output_name}_bank{bank}{comma}\n'
-            output += '};\n\n'
-
-            output += f'''// Usage: Copy each bank to Layer2 memory
-// Bank 0 -> 8K bank 16 (lines 0-31)
-// Bank 1 -> 8K bank 17 (lines 32-63)
-// Bank 2 -> 8K bank 18 (lines 64-95)
-// Bank 3 -> 8K bank 19 (lines 96-127)
-// Bank 4 -> 8K bank 20 (lines 128-159)
-// Bank 5 -> 8K bank 21 (lines 160-191)
-
-'''
-        else:
-            # For smaller images, use a single contiguous array
-            output += f'// Image data (row-major order, top to bottom)\n'
-            output += f'static const uint8_t {self.output_name}_data[{total_size}] = {{\n'
-
-            for y in range(self.height):
-                row_data = []
-                for x in range(self.width):
-                    rgb = self.canvas.get_at((x, y))[:3]
-                    idx = self.get_nearest_color_index(rgb)
-                    rgb332 = ZX_TO_RGB332[idx]
-                    row_data.append(f'0x{rgb332:02X}')
-
-                # Split into groups of 16 for readability
-                for i in range(0, self.width, 16):
-                    chunk = row_data[i:i + 16]
-                    is_last = (y == self.height - 1) and (i + 16 >= self.width)
-                    comma = '' if is_last else ','
-                    output += f'    {",".join(chunk)}{comma}\n'
-
-            output += '};\n\n'
-
-            output += f'''// Usage: Draw to Layer2 at position (x, y)
-// for (int row = 0; row < {name_upper}_HEIGHT; row++) {{
-//     for (int col = 0; col < {name_upper}_WIDTH; col++) {{
-//         layer2_plot(x + col, y + row, {self.output_name}_data[row * {name_upper}_WIDTH + col]);
-//     }}
-// }}
-
-'''
-
-        output += f'#endif // {guard_name}\n'
-
-        with open(output_path, 'w') as f:
-            f.write(output)
-
-        print(f"Exported: {output_path}")
-        print(f"  Size: {self.width}x{self.height} = {total_size} bytes")
 
     def draw(self):
         """Draw the editor interface"""
@@ -577,7 +459,7 @@ class Layer2Editor:
 
         # Instructions
         inst_y = info_y + 25
-        instructions = "Image: Select area | Grid: Paint/Opt+Fill/Ctrl+Replace/Right-Pick | Arrows: Resize | WASD: Move zoom | Shift+S: Save | E: Export"
+        instructions = "Image: Select area | Grid: Paint/Opt+Fill/Ctrl+Replace/Right-Pick | Arrows: Resize | WASD: Move zoom | Shift+S: Save"
         label = self.small_font.render(instructions, True, (150, 150, 150))
         self.screen.blit(label, (self.padding, inst_y))
 
@@ -609,8 +491,6 @@ class Layer2Editor:
                         mods = pygame.key.get_mods()
                         if mods & pygame.KMOD_SHIFT:
                             self.save_png()
-                    elif event.key == pygame.K_e:
-                        self.export_header()
                     elif event.key == pygame.K_z:
                         self.undo()
                     # Arrow keys to resize image
@@ -705,41 +585,6 @@ class Layer2Editor:
         pygame.quit()
 
 
-def convert_only(input_path, output_name):
-    """Convert PNG to header without GUI"""
-    pygame.init()
-
-    if not os.path.exists(input_path):
-        print(f"Error: File not found: {input_path}")
-        return False
-
-    editor = Layer2Editor.__new__(Layer2Editor)
-    editor.output_name = output_name
-
-    # Load image to get dimensions
-    img = pygame.image.load(input_path)
-    img_w, img_h = img.get_size()
-
-    # Clamp to max dimensions
-    editor.width = min(img_w, LAYER2_MAX_WIDTH)
-    editor.height = min(img_h, LAYER2_MAX_HEIGHT)
-
-    editor.canvas = pygame.Surface((editor.width, editor.height))
-    editor.canvas.fill(ZX_PALETTE[0])
-
-    # Crop if needed
-    if img_w > LAYER2_MAX_WIDTH or img_h > LAYER2_MAX_HEIGHT:
-        crop_rect = pygame.Rect(0, 0, editor.width, editor.height)
-        editor.canvas.blit(img, (0, 0), crop_rect)
-    else:
-        editor.canvas.blit(img, (0, 0))
-
-    # Quantize and export
-    editor.quantize_to_zx_palette()
-    editor.export_header()
-    return True
-
-
 if __name__ == '__main__':
     pygame.init()
 
@@ -748,19 +593,12 @@ if __name__ == '__main__':
         print("\nStarting with blank 256x192 canvas...")
         editor = Layer2Editor()
         editor.run()
-    elif sys.argv[1] == '--convert':
-        # Command-line conversion mode: --convert input.png output_name
-        if len(sys.argv) < 4:
-            print("Usage: python3 layer2_editor.py --convert <input.png> <output_name>")
-            sys.exit(1)
-        convert_only(sys.argv[2], sys.argv[3])
     else:
         input_path = sys.argv[1]
-        output_name = sys.argv[2] if len(sys.argv) > 2 else "layer2_image"
 
         if not os.path.exists(input_path):
             print(f"Error: File not found: {input_path}")
             sys.exit(1)
 
-        editor = Layer2Editor(input_path, output_name)
+        editor = Layer2Editor(input_path)
         editor.run()

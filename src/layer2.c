@@ -6,13 +6,13 @@
 #include "tileset.h"
 
 // External references to banked data (forces linker to include)
-extern uint8_t border_image_bank40;
-extern uint8_t border_image_bank41;
+extern uint8_t border_page40;
+extern uint8_t border_page41;
 
 // Use a dummy reference if necessary
 void force_include(void) {
-    volatile uint8_t *ptr = &border_image_bank40;
-    ptr = &border_image_bank41;
+    volatile uint8_t *ptr = &border_page40;
+    ptr = &border_page41;
     (void)ptr;
 }
 
@@ -21,12 +21,10 @@ void force_include(void) {
 #define MMU_SLOT2_REG  0x52
 #define MMU_SLOT3_REG  0x53
 
-// Border image stored in 16K bank 20 (8K pages 40-41) loaded by NEX loader
-// Image dimensions: 60x191 = 11460 bytes
-// 16K bank 20 maps to 0xC000-0xFFFF when using MMU slots 6-7
+// Border image stored in 8K pages 40-41 loaded by NEX loader
+// Image dimensions: 60x192 = 11520 bytes
 #define BORDER_IMAGE_WIDTH   60
-#define BORDER_IMAGE_HEIGHT  191
-#define BORDER_IMAGE_BANK_16K  20  // 16K bank number for MMU slot 6
+#define BORDER_IMAGE_HEIGHT  192
 
 // Layer 2 background tiles (2x2 block = 16x16 pixels from tileset.h)
 #define L2_TILE_TL  tile_O0  // top-left
