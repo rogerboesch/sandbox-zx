@@ -3,7 +3,7 @@
 Layer2 Image Editor for ZX Spectrum Next
 - Open PNG images and convert to Layer2 format (8-bit RGB332)
 - Supports any size up to 256x192 (preserves original dimensions)
-- Paint with 16 ZX Spectrum colors
+- Paint with 16 ZX Spectrum colors in zoomed 32x32 grid
 - Export as C header file for inclusion in game
 
 Usage: python3 layer2_editor.py <input.png> [output_name]
@@ -11,14 +11,16 @@ Usage: python3 layer2_editor.py <input.png> [output_name]
   output_name: Name for the image (default: layer2_image)
 
 Controls:
-  Click on canvas: Paint with selected color
-  Opt+Click: Flood fill area
-  Ctrl+Click: Replace all pixels of clicked color
-  Right-click: Pick color from canvas
+  Click on image: Select 32x32 area to edit in zoom grid
+  Click on zoom grid: Paint with selected color
+  Opt+Click on grid: Flood fill area
+  Ctrl+Click on grid: Replace all pixels of clicked color
+  Right-click on grid: Pick color
   Click on palette: Select color
-  S: Save PNG
+  Arrow keys: Resize image (Right +width, Down +height, Left -width, Up -height)
+  WASD: Move zoom selection
+  S: Save PNG (use Shift+S)
   E: Export to header file
-  N: New blank canvas (resets to original size)
   Z: Undo
   ESC: Quit
 """
@@ -31,6 +33,10 @@ from collections import deque
 # Layer2 max dimensions
 LAYER2_MAX_WIDTH = 256
 LAYER2_MAX_HEIGHT = 192
+
+# Zoom grid settings
+ZOOM_SIZE = 32  # 32x32 pixel editing area
+ZOOM_SCALE = 10  # 10x magnification
 
 # ZX Spectrum 16-color palette (RGB values)
 ZX_PALETTE = [
@@ -95,6 +101,10 @@ class Layer2Editor:
         self.width = LAYER2_MAX_WIDTH
         self.height = LAYER2_MAX_HEIGHT
 
+        # Zoom selection position (top-left corner of 32x32 area)
+        self.zoom_x = 0
+        self.zoom_y = 0
+
         # Load and convert input image if provided
         if input_path and os.path.exists(input_path):
             self.load_image(input_path)
@@ -103,28 +113,33 @@ class Layer2Editor:
             self.canvas = pygame.Surface((self.width, self.height))
             self.canvas.fill(ZX_PALETTE[0])
 
-        # Calculate scale factor based on canvas size
-        # Aim for a reasonable display size (min 400px, max 768px on largest dimension)
+        # Calculate scale factor for main image view
+        # Aim for reasonable display that fits alongside zoom grid
         max_dim = max(self.width, self.height)
-        if max_dim < 100:
-            self.scale = 6
-        elif max_dim < 150:
-            self.scale = 4
+        if max_dim <= 64:
+            self.image_scale = 4
+        elif max_dim <= 128:
+            self.image_scale = 3
         else:
-            self.scale = 3
+            self.image_scale = 2
 
         # Layout
         self.padding = 20
-        self.canvas_display_width = self.width * self.scale
-        self.canvas_display_height = self.height * self.scale
+        self.image_display_width = self.width * self.image_scale
+        self.image_display_height = self.height * self.image_scale
+        self.zoom_display_size = ZOOM_SIZE * ZOOM_SCALE  # 320x320
         self.palette_height = 50
         self.info_height = 60
 
-        # Minimum window width for palette (16 colors)
+        # Window dimensions
+        self.window_width = (self.image_display_width + self.zoom_display_size +
+                            self.padding * 3)
+        # Minimum width for palette
         min_palette_width = 16 * 36 + 15 * 4 + self.padding * 2
+        self.window_width = max(self.window_width, min_palette_width)
 
-        self.window_width = max(self.canvas_display_width + self.padding * 2, min_palette_width)
-        self.window_height = (self.canvas_display_height + self.palette_height +
+        content_height = max(self.image_display_height, self.zoom_display_size)
+        self.window_height = (content_height + self.palette_height +
                               self.info_height + self.padding * 4)
 
         self.screen = pygame.display.set_mode((self.window_width, self.window_height))
@@ -150,7 +165,6 @@ class Layer2Editor:
 
         # If image is larger than max, crop from top-left
         if img_w > LAYER2_MAX_WIDTH or img_h > LAYER2_MAX_HEIGHT:
-            # Crop to fit
             crop_rect = pygame.Rect(0, 0, self.width, self.height)
             self.canvas.blit(img, (0, 0), crop_rect)
         else:
@@ -186,25 +200,94 @@ class Layer2Editor:
             return self.get_nearest_color_index(rgb)
         return 0
 
+    def clamp_zoom_position(self):
+        """Ensure zoom selection stays within image bounds"""
+        max_x = max(0, self.width - ZOOM_SIZE)
+        max_y = max(0, self.height - ZOOM_SIZE)
+        self.zoom_x = max(0, min(self.zoom_x, max_x))
+        self.zoom_y = max(0, min(self.zoom_y, max_y))
+
+    def set_zoom_position(self, x, y):
+        """Set zoom position centered on clicked point"""
+        self.zoom_x = x - ZOOM_SIZE // 2
+        self.zoom_y = y - ZOOM_SIZE // 2
+        self.clamp_zoom_position()
+
+    def move_zoom(self, dx, dy):
+        """Move zoom selection by delta"""
+        self.zoom_x += dx
+        self.zoom_y += dy
+        self.clamp_zoom_position()
+
+    def resize_image(self, dw, dh):
+        """Resize image by delta width/height"""
+        new_width = self.width + dw
+        new_height = self.height + dh
+
+        # Clamp to valid range (min 1x1, max 256x192)
+        new_width = max(1, min(new_width, LAYER2_MAX_WIDTH))
+        new_height = max(1, min(new_height, LAYER2_MAX_HEIGHT))
+
+        if new_width == self.width and new_height == self.height:
+            return  # No change
+
+        self.save_undo()
+
+        # Create new canvas
+        new_canvas = pygame.Surface((new_width, new_height))
+        new_canvas.fill(ZX_PALETTE[0])  # Fill with black
+
+        # Copy existing content (as much as fits)
+        copy_w = min(self.width, new_width)
+        copy_h = min(self.height, new_height)
+        new_canvas.blit(self.canvas, (0, 0), (0, 0, copy_w, copy_h))
+
+        self.canvas = new_canvas
+        self.width = new_width
+        self.height = new_height
+
+        # Update display dimensions
+        self.image_display_width = self.width * self.image_scale
+        self.image_display_height = self.height * self.image_scale
+
+        # Clamp zoom position to new bounds
+        self.clamp_zoom_position()
+
+        # Update window title
+        title = f"Layer2 Editor - {os.path.basename(self.input_path) if self.input_path else 'New'} ({self.width}x{self.height})"
+        pygame.display.set_caption(title)
+
     def save_undo(self):
-        """Save current state for undo"""
-        self.undo_stack.append(self.canvas.copy())
+        """Save current state for undo (including dimensions)"""
+        self.undo_stack.append((self.canvas.copy(), self.width, self.height))
         if len(self.undo_stack) > self.max_undo:
             self.undo_stack.pop(0)
 
     def undo(self):
         """Restore previous state"""
         if self.undo_stack:
-            self.canvas = self.undo_stack.pop()
+            self.canvas, self.width, self.height = self.undo_stack.pop()
+            # Update display dimensions
+            self.image_display_width = self.width * self.image_scale
+            self.image_display_height = self.height * self.image_scale
+            self.clamp_zoom_position()
+            # Update window title
+            title = f"Layer2 Editor - {os.path.basename(self.input_path) if self.input_path else 'New'} ({self.width}x{self.height})"
+            pygame.display.set_caption(title)
 
-    def paint_pixel(self, x, y):
-        """Paint a single pixel"""
-        if 0 <= x < self.width and 0 <= y < self.height:
+    def paint_pixel(self, grid_x, grid_y):
+        """Paint a pixel in the zoom grid (coordinates relative to zoom area)"""
+        canvas_x = self.zoom_x + grid_x
+        canvas_y = self.zoom_y + grid_y
+        if 0 <= canvas_x < self.width and 0 <= canvas_y < self.height:
             self.save_undo()
-            self.canvas.set_at((x, y), ZX_PALETTE[self.selected_color])
+            self.canvas.set_at((canvas_x, canvas_y), ZX_PALETTE[self.selected_color])
 
-    def flood_fill(self, start_x, start_y):
-        """Flood fill from point"""
+    def flood_fill(self, grid_x, grid_y):
+        """Flood fill from point (grid coordinates)"""
+        start_x = self.zoom_x + grid_x
+        start_y = self.zoom_y + grid_y
+
         if not (0 <= start_x < self.width and 0 <= start_y < self.height):
             return
 
@@ -234,13 +317,16 @@ class Layer2Editor:
 
             queue.extend([(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
 
-    def replace_color(self, x, y):
+    def replace_color(self, grid_x, grid_y):
         """Replace all pixels of clicked color with selected color"""
-        if not (0 <= x < self.width and 0 <= y < self.height):
+        canvas_x = self.zoom_x + grid_x
+        canvas_y = self.zoom_y + grid_y
+
+        if not (0 <= canvas_x < self.width and 0 <= canvas_y < self.height):
             return
 
         self.save_undo()
-        target_color = self.canvas.get_at((x, y))[:3]
+        target_color = self.canvas.get_at((canvas_x, canvas_y))[:3]
         fill_color = ZX_PALETTE[self.selected_color]
 
         for py in range(self.height):
@@ -248,15 +334,12 @@ class Layer2Editor:
                 if self.canvas.get_at((px, py))[:3] == target_color:
                     self.canvas.set_at((px, py), fill_color)
 
-    def pick_color(self, x, y):
-        """Pick color from canvas"""
-        if 0 <= x < self.width and 0 <= y < self.height:
-            self.selected_color = self.get_color_index_at(x, y)
-
-    def new_canvas(self):
-        """Create new blank canvas (same size)"""
-        self.save_undo()
-        self.canvas.fill(ZX_PALETTE[0])
+    def pick_color(self, grid_x, grid_y):
+        """Pick color from zoom grid"""
+        canvas_x = self.zoom_x + grid_x
+        canvas_y = self.zoom_y + grid_y
+        if 0 <= canvas_x < self.width and 0 <= canvas_y < self.height:
+            self.selected_color = self.get_color_index_at(canvas_x, canvas_y)
 
     def save_png(self):
         """Save canvas as PNG"""
@@ -387,31 +470,81 @@ class Layer2Editor:
         """Draw the editor interface"""
         self.screen.fill((48, 48, 48))
 
-        # Center canvas if window is wider
-        canvas_x = (self.window_width - self.canvas_display_width) // 2
-        canvas_y = self.padding
+        # === Left side: Main image view ===
+        image_x = self.padding
+        image_y = self.padding
 
-        # Draw checkerboard background (for transparency reference)
-        for cy in range(0, self.canvas_display_height, 16):
-            for cx in range(0, self.canvas_display_width, 16):
-                checker = ((cx // 16 + cy // 16) % 2) * 20 + 40
-                rect = pygame.Rect(canvas_x + cx, canvas_y + cy, 16, 16)
+        # Draw scaled main image
+        scaled_image = pygame.transform.scale(
+            self.canvas,
+            (self.image_display_width, self.image_display_height)
+        )
+        self.screen.blit(scaled_image, (image_x, image_y))
+
+        # Draw image border
+        pygame.draw.rect(self.screen, (100, 100, 100),
+                        (image_x - 1, image_y - 1,
+                         self.image_display_width + 2, self.image_display_height + 2), 1)
+
+        # Draw zoom selection rectangle on main image
+        sel_x = image_x + self.zoom_x * self.image_scale
+        sel_y = image_y + self.zoom_y * self.image_scale
+        sel_w = min(ZOOM_SIZE, self.width - self.zoom_x) * self.image_scale
+        sel_h = min(ZOOM_SIZE, self.height - self.zoom_y) * self.image_scale
+        pygame.draw.rect(self.screen, (255, 255, 0),
+                        (sel_x, sel_y, sel_w, sel_h), 2)
+
+        # === Right side: Zoom grid ===
+        zoom_grid_x = image_x + self.image_display_width + self.padding
+        zoom_grid_y = self.padding
+
+        # Draw checkerboard background for zoom grid
+        for cy in range(ZOOM_SIZE):
+            for cx in range(ZOOM_SIZE):
+                checker = ((cx + cy) % 2) * 20 + 40
+                rect = pygame.Rect(
+                    zoom_grid_x + cx * ZOOM_SCALE,
+                    zoom_grid_y + cy * ZOOM_SCALE,
+                    ZOOM_SCALE, ZOOM_SCALE
+                )
                 pygame.draw.rect(self.screen, (checker, checker, checker), rect)
 
-        # Draw canvas
-        scaled_canvas = pygame.transform.scale(
-            self.canvas,
-            (self.canvas_display_width, self.canvas_display_height)
-        )
-        self.screen.blit(scaled_canvas, (canvas_x, canvas_y))
+        # Draw zoomed pixels
+        for gy in range(ZOOM_SIZE):
+            for gx in range(ZOOM_SIZE):
+                canvas_x = self.zoom_x + gx
+                canvas_y = self.zoom_y + gy
+                if 0 <= canvas_x < self.width and 0 <= canvas_y < self.height:
+                    color = self.canvas.get_at((canvas_x, canvas_y))[:3]
+                    rect = pygame.Rect(
+                        zoom_grid_x + gx * ZOOM_SCALE,
+                        zoom_grid_y + gy * ZOOM_SCALE,
+                        ZOOM_SCALE, ZOOM_SCALE
+                    )
+                    pygame.draw.rect(self.screen, color, rect)
 
-        # Canvas border
+        # Draw grid lines on zoom view
+        grid_color = (60, 60, 60)
+        for i in range(ZOOM_SIZE + 1):
+            # Vertical lines
+            x = zoom_grid_x + i * ZOOM_SCALE
+            pygame.draw.line(self.screen, grid_color,
+                           (x, zoom_grid_y),
+                           (x, zoom_grid_y + self.zoom_display_size))
+            # Horizontal lines
+            y = zoom_grid_y + i * ZOOM_SCALE
+            pygame.draw.line(self.screen, grid_color,
+                           (zoom_grid_x, y),
+                           (zoom_grid_x + self.zoom_display_size, y))
+
+        # Draw zoom grid border
         pygame.draw.rect(self.screen, (100, 100, 100),
-                        (canvas_x - 1, canvas_y - 1,
-                         self.canvas_display_width + 2, self.canvas_display_height + 2), 1)
+                        (zoom_grid_x - 1, zoom_grid_y - 1,
+                         self.zoom_display_size + 2, self.zoom_display_size + 2), 1)
 
-        # Palette area (centered)
-        palette_y = canvas_y + self.canvas_display_height + self.padding
+        # === Bottom: Palette ===
+        content_height = max(self.image_display_height, self.zoom_display_size)
+        palette_y = self.padding + content_height + self.padding
         color_size = 36
         color_gap = 4
         total_palette_width = 16 * color_size + 15 * color_gap
@@ -436,15 +569,15 @@ class Layer2Editor:
             label = self.small_font.render(str(i), True, text_color)
             self.screen.blit(label, (rect.x + 2, rect.y + 2))
 
-        # Selected color info
+        # === Info area ===
         info_y = palette_y + color_size + 10
-        color_info = f"Color {self.selected_color}: {ZX_COLOR_NAMES[self.selected_color]} (RGB332: 0x{ZX_TO_RGB332[self.selected_color]:02X}) | Size: {self.width}x{self.height}"
+        color_info = f"Color {self.selected_color}: {ZX_COLOR_NAMES[self.selected_color]} | Size: {self.width}x{self.height} | Zoom: ({self.zoom_x},{self.zoom_y})"
         label = self.font.render(color_info, True, (200, 200, 200))
         self.screen.blit(label, (self.padding, info_y))
 
         # Instructions
         inst_y = info_y + 25
-        instructions = "Click: Paint | Opt+Click: Fill | Ctrl+Click: Replace | Right-click: Pick | S: Save | E: Export | N: New | Z: Undo"
+        instructions = "Image: Select area | Grid: Paint/Opt+Fill/Ctrl+Replace/Right-Pick | Arrows: Resize | WASD: Move zoom | Shift+S: Save | E: Export"
         label = self.small_font.render(instructions, True, (150, 150, 150))
         self.screen.blit(label, (self.padding, inst_y))
 
@@ -457,9 +590,12 @@ class Layer2Editor:
         mouse_down = False
         last_paint_pos = None
 
-        # Calculate canvas position (centered)
-        canvas_x = (self.window_width - self.canvas_display_width) // 2
-        canvas_y = self.padding
+        # Calculate positions
+        image_x = self.padding
+        image_y = self.padding
+        zoom_grid_x = image_x + self.image_display_width + self.padding
+        zoom_grid_y = self.padding
+        content_height = max(self.image_display_height, self.zoom_display_size)
 
         while running:
             for event in pygame.event.get():
@@ -470,43 +606,69 @@ class Layer2Editor:
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     elif event.key == pygame.K_s:
-                        self.save_png()
+                        mods = pygame.key.get_mods()
+                        if mods & pygame.KMOD_SHIFT:
+                            self.save_png()
                     elif event.key == pygame.K_e:
                         self.export_header()
-                    elif event.key == pygame.K_n:
-                        self.new_canvas()
                     elif event.key == pygame.K_z:
                         self.undo()
+                    # Arrow keys to resize image
+                    elif event.key == pygame.K_LEFT:
+                        self.resize_image(-1, 0)
+                    elif event.key == pygame.K_RIGHT:
+                        self.resize_image(1, 0)
+                    elif event.key == pygame.K_UP:
+                        self.resize_image(0, -1)
+                    elif event.key == pygame.K_DOWN:
+                        self.resize_image(0, 1)
+                    # WASD to move zoom selection
+                    elif event.key == pygame.K_a:
+                        self.move_zoom(-1, 0)
+                    elif event.key == pygame.K_d:
+                        self.move_zoom(1, 0)
+                    elif event.key == pygame.K_w:
+                        self.move_zoom(0, -1)
+                    elif event.key == pygame.K_s and not (pygame.key.get_mods() & pygame.KMOD_SHIFT):
+                        self.move_zoom(0, 1)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mx, my = event.pos
 
-                    # Canvas click
-                    if (canvas_x <= mx < canvas_x + self.canvas_display_width and
-                        canvas_y <= my < canvas_y + self.canvas_display_height):
+                    # Check main image click (select zoom area)
+                    if (image_x <= mx < image_x + self.image_display_width and
+                        image_y <= my < image_y + self.image_display_height):
+                        # Convert to canvas coordinates
+                        cx = (mx - image_x) // self.image_scale
+                        cy = (my - image_y) // self.image_scale
+                        self.set_zoom_position(cx, cy)
 
-                        px = (mx - canvas_x) // self.scale
-                        py = (my - canvas_y) // self.scale
+                    # Check zoom grid click (painting)
+                    elif (zoom_grid_x <= mx < zoom_grid_x + self.zoom_display_size and
+                          zoom_grid_y <= my < zoom_grid_y + self.zoom_display_size):
+                        # Convert to grid coordinates
+                        gx = (mx - zoom_grid_x) // ZOOM_SCALE
+                        gy = (my - zoom_grid_y) // ZOOM_SCALE
 
                         if event.button == 1:  # Left click
                             mods = pygame.key.get_mods()
                             if mods & pygame.KMOD_ALT:
-                                self.flood_fill(px, py)
+                                self.flood_fill(gx, gy)
                             elif mods & pygame.KMOD_CTRL:
-                                self.replace_color(px, py)
+                                self.replace_color(gx, gy)
                             else:
                                 mouse_down = True
-                                last_paint_pos = (px, py)
-                                self.paint_pixel(px, py)
+                                last_paint_pos = (gx, gy)
+                                self.paint_pixel(gx, gy)
                         elif event.button == 3:  # Right click - pick color
-                            self.pick_color(px, py)
+                            self.pick_color(gx, gy)
 
-                    # Palette click
+                    # Check palette click
+                    palette_y = self.padding + content_height + self.padding
                     color_size = 36
                     color_gap = 4
                     total_palette_width = 16 * color_size + 15 * color_gap
                     palette_x = (self.window_width - total_palette_width) // 2
-                    palette_y = canvas_y + self.canvas_display_height + self.padding
 
                     for i in range(16):
                         rect = pygame.Rect(
@@ -527,15 +689,15 @@ class Layer2Editor:
                     if mouse_down:
                         mx, my = event.pos
 
-                        if (canvas_x <= mx < canvas_x + self.canvas_display_width and
-                            canvas_y <= my < canvas_y + self.canvas_display_height):
+                        # Only paint in zoom grid
+                        if (zoom_grid_x <= mx < zoom_grid_x + self.zoom_display_size and
+                            zoom_grid_y <= my < zoom_grid_y + self.zoom_display_size):
+                            gx = (mx - zoom_grid_x) // ZOOM_SCALE
+                            gy = (my - zoom_grid_y) // ZOOM_SCALE
 
-                            px = (mx - canvas_x) // self.scale
-                            py = (my - canvas_y) // self.scale
-
-                            if (px, py) != last_paint_pos:
-                                last_paint_pos = (px, py)
-                                self.paint_pixel(px, py)
+                            if (gx, gy) != last_paint_pos:
+                                last_paint_pos = (gx, gy)
+                                self.paint_pixel(gx, gy)
 
             self.draw()
             clock.tick(60)
