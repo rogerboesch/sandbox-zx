@@ -80,8 +80,12 @@ void player_update_cooldowns(void) {
     if (player.invincible > 0) player.invincible--;
 }
 
-// Check if player is outside level boundaries
-// Returns crash type (CRASH_LEVEL) or CRASH_NONE
+// Hole tile range
+#define TILE_HOLE_TL 0x07
+#define TILE_HOLE_BR 0x0A
+
+// Check if player is outside level boundaries or in a hole
+// Returns crash type (CRASH_LEVEL, CRASH_HOLE) or CRASH_NONE
 uint8_t player_check_level(void) {
     int16_t player_center_x;
     int16_t player_center_y;
@@ -104,18 +108,21 @@ uint8_t player_check_level(void) {
         return CRASH_LEVEL;
     }
 
+    // If tile is a hole (tiles 0x07-0x0A), player fell in
+    if (tile >= TILE_HOLE_TL && tile <= TILE_HOLE_BR) {
+        return CRASH_HOLE;
+    }
+
     return CRASH_NONE;
 }
 
 // Apply damage to player
 // Returns 1 if player died
 uint8_t player_hit(void) {
-    // TESTING: Disable dying
-    // player.lives--;
+    player.lives--;
     player.invincible = 120;  // 2 seconds of invincibility
 
-    // return (player.lives == 0) ? 1 : 0;
-    return 0;  // Never die for testing
+    return (player.lives == 0) ? 1 : 0;
 }
 
 // Reset player to center after crash

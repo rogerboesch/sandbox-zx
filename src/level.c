@@ -215,6 +215,10 @@ uint8_t level_is_complete(void) {
 #define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right
 #define TILE_ROAD_RIGHT   0x05  // right border
 #define TILE_TRANS        0x06  // transparent
+#define TILE_HOLE_TL      0x07  // hole top-left
+#define TILE_HOLE_TR      0x08  // hole top-right
+#define TILE_HOLE_BL      0x09  // hole bottom-left
+#define TILE_HOLE_BR      0x0A  // hole bottom-right
 #define TILE_LANE_MARK    0x0B  // lane marker (I4) - every 10 blocks
 #define TILE_LANE_EDGE    0x0C  // lane start/end marker (J4)
 
@@ -355,6 +359,92 @@ static uint8_t get_mid_tile(uint8_t col, int16_t world_y, int16_t seg_start_y, i
     }
 }
 
+// Check for hole objects at a given world_y and place hole tiles
+// seg_idx: segment index
+// seg_start_y: pixel position where segment starts
+// world_y: current row's world position
+// lanes: lane configuration
+// l_left, l_right, r_left, r_right: lane boundaries in pixels
+// tiles: output tile array
+static void place_holes_in_row(uint8_t seg_idx, int16_t seg_start_y, int16_t world_y,
+                                uint8_t lanes, int16_t l_left, int16_t l_right,
+                                int16_t r_left, int16_t r_right, uint8_t* tiles) {
+    const LevelSegment* seg;
+    const LevelObject* obj;
+    uint8_t obj_start, obj_end;
+    uint8_t i;
+    int16_t obj_world_y;
+    int16_t row_in_hole;
+    uint8_t obj_type, obj_lane, obj_size;
+    int16_t hole_x;
+    uint8_t tile_x;
+    uint8_t is_top_row;
+    uint8_t width;
+
+    if (seg_idx >= level_state.def->segment_count) return;
+
+    seg = &level_state.def->segments[seg_idx];
+
+    // No holes in lanes smaller than 3 blocks
+    width = SEGMENT_WIDTH(seg->config);
+    if (width < 3) return;
+    obj_start = seg->obj_offset;
+    obj_end = seg->obj_offset + seg->obj_count;
+
+    // Check each object in this segment
+    for (i = obj_start; i < obj_end; i++) {
+        obj = &level_state.def->objects[i];
+        obj_type = OBJECT_TYPE(obj->data);
+
+        // Only handle holes for now
+        if (obj_type != OBJ_HOLE) continue;
+
+        // Calculate object's world Y position
+        // obj->at is block offset within segment, 1 block = 16 pixels
+        obj_world_y = seg_start_y + (obj->at * BLOCK_SIZE_PX);
+
+        // Holes are 2x2 tiles = 16x16 pixels
+        // Check if this row is within the hole (top 8px or bottom 8px)
+        row_in_hole = world_y - obj_world_y;
+        if (row_in_hole < 0 || row_in_hole >= 16) continue;
+
+        // First 8 pixels = bottom row (A1,B1), next 8 = top row (A0,B0)
+        // Because screen scrolls up, lower world_y appears higher on screen
+        is_top_row = (row_in_hole >= 8) ? 1 : 0;
+
+        // Get lane and size
+        obj_lane = OBJECT_LANE(obj->data);
+        obj_size = OBJECT_SIZE(obj->data);
+        (void)obj_size;  // TODO: use size for hole width
+
+        // Calculate hole X position based on lane
+        if (lanes == LANE_BOTH) {
+            if (obj_lane == OBJ_LANE_LEFT) {
+                hole_x = (l_left + l_right) / 2 - 8;  // Center of left lane
+            } else {
+                hole_x = (r_left + r_right) / 2 - 8;  // Center of right lane
+            }
+        } else {
+            // Single lane - center the hole
+            hole_x = (l_left + l_right) / 2 - 8;
+        }
+
+        // Convert to tile coordinates
+        tile_x = (uint8_t)((hole_x / 8) + 4);
+
+        // Place 2 hole tiles (left and right)
+        if (tile_x < 39) {
+            if (is_top_row) {
+                tiles[tile_x] = TILE_HOLE_TL;
+                tiles[tile_x + 1] = TILE_HOLE_TR;
+            } else {
+                tiles[tile_x] = TILE_HOLE_BL;
+                tiles[tile_x + 1] = TILE_HOLE_BR;
+            }
+        }
+    }
+}
+
 // Generate tilemap tiles for a specific row at a specific world position
 void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles) {
     uint8_t i;
@@ -362,6 +452,7 @@ void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles) {
     uint8_t lanes;
     int16_t l_left, l_right, r_left, r_right;
     int16_t seg_start_y, seg_end_y;
+    uint8_t seg_idx;
 
     // Clear row to transparent
     for (i = 0; i < 40; i++) {
@@ -369,7 +460,7 @@ void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles) {
     }
 
     // Get segment configuration for this world position
-    get_segment_at_world_y(world_y, &lanes, &l_left, &l_right, &r_left, &r_right,
+    seg_idx = get_segment_at_world_y(world_y, &lanes, &l_left, &l_right, &r_left, &r_right,
                            &seg_start_y, &seg_end_y);
 
     (void)row;  // Row index not needed, world_y determines content
@@ -417,6 +508,10 @@ void level_generate_row(uint8_t row, int16_t world_y, uint8_t* tiles) {
             }
         }
     }
+
+    // Place holes on top of road tiles
+    place_holes_in_row(seg_idx, seg_start_y, world_y, lanes,
+                       l_left, l_right, r_left, r_right, tiles);
 }
 
 // Get current segment info (for debugging/display)

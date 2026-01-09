@@ -40,7 +40,7 @@ static void draw_gameover(void) {
     uint8_t total_len, x;
 
     ula_clear();
-    ula_print_at(6, 10, "     GAME OVER", MENU_RED_ON_BLACK);
+    ula_print_at(6, 10, "     GAME OVER", MENU_WHITE_ON_RED);
     ula_print_at(6, 16, "PRESS FIRE TO START", MENU_WHITE_ON_BLACK);
 
     // Calculate score digit count
@@ -255,8 +255,8 @@ int main(void) {
                 // Show level win message once
                 if (!state_text_shown) {
                     state_text_shown = 1;
-                    ula_print_at(2, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
-                    ula_print_at(21, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                    ula_print_at(2, 10, "LEVEL WIN", ATTR_WHITE_ON_GREEN);
+                    ula_print_at(21, 10, "LEVEL WIN", ATTR_WHITE_ON_GREEN);
                 }
 
                 // Wait for fire to restart

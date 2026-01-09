@@ -14,10 +14,10 @@
 #define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right (F1)
 #define TILE_ROAD_RIGHT   0x05  // right border (H6)
 #define TILE_TRANS        0x06  // transparent/empty
-#define TILE_HOLE_TL      0x07  // hole top-left (K0)
-#define TILE_HOLE_TR      0x08  // hole top-right (L0)
-#define TILE_HOLE_BL      0x09  // hole bottom-left (K1)
-#define TILE_HOLE_BR      0x0A  // hole bottom-right (L1)
+#define TILE_HOLE_TL      0x07  // hole top-left (A0)
+#define TILE_HOLE_TR      0x08  // hole top-right (B0)
+#define TILE_HOLE_BL      0x09  // hole bottom-left (A1)
+#define TILE_HOLE_BR      0x0A  // hole bottom-right (B1)
 #define TILE_LANE_MARK    0x0B  // lane marker (I4)
 #define TILE_LANE_EDGE    0x0C  // lane start/end marker (J4)
 
@@ -38,10 +38,10 @@ static const uint8_t * const tilemap_tiles[13] = {
     tile_F1,           // 4: TILE_ROAD_MID_BR
     tile_H6,           // 5: TILE_ROAD_RIGHT
     tile_transparent,  // 6: TILE_TRANS
-    tile_K0,           // 7: TILE_HOLE_TL
-    tile_L0,           // 8: TILE_HOLE_TR
-    tile_K1,           // 9: TILE_HOLE_BL
-    tile_L1,           // 10: TILE_HOLE_BR
+    tile_A0,           // 7: TILE_HOLE_TL
+    tile_B0,           // 8: TILE_HOLE_TR
+    tile_A1,           // 9: TILE_HOLE_BL
+    tile_B1,           // 10: TILE_HOLE_BR
     tile_I4,           // 11: TILE_LANE_MARK
     tile_J4            // 12: TILE_LANE_EDGE
 };
@@ -337,6 +337,14 @@ void set_layers_menu(void) {
     // U L S order (101) - ULA on top
     // Bit 0 = 0 (sprites disabled)
     ZXN_NEXTREG(0x15, 0x14);  // 0b00010100 = U L S, no sprites
+
+    // Disable global transparency so ULA colors show correctly
+    ZXN_NEXTREG(0x14, 0xE3);  // Set to bright magenta (unlikely to be used)
+
+    // Reset ULA palette control to standard mode
+    ZXN_NEXTREG(0x43, 0x00);  // Select ULA palette, no ULANext
+    ZXN_NEXTREG(0x42, 0x00);  // ULA palette offset = 0
+    ZXN_NEXTREG(0x68, 0x00);  // Disable ULA+
 }
 
 // Get tile index at screen position
