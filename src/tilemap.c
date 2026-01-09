@@ -325,8 +325,7 @@ void set_layers_gameplay(void) {
     ZXN_NEXTREG(0x15, 0x0B);  // 0b00001011 = S U L order, sprites visible and over border
 
     // Register 0x14: Global Transparency Color
-    // Set ULA paper black (0x00) as transparent color
-    // This makes ULA black areas show-through to layers below
+    // Black (0x00) is transparent so ULA shows layers below
     ZXN_NEXTREG(0x14, 0x00);  // Black is transparent
 
     // Tilemap is under ULA (reg 0x6B bit 0 = 0)

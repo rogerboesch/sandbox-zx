@@ -17,12 +17,19 @@
 #define ULA_ATTR(paper, ink)  (((paper) << 3) | (ink))
 #define ULA_BRIGHT            0x40
 
-// Common attributes
-#define ATTR_WHITE_ON_BLACK   (ULA_ATTR(ULA_BLACK, ULA_WHITE) | ULA_BRIGHT)
-#define ATTR_YELLOW_ON_BLACK  (ULA_ATTR(ULA_BLACK, ULA_YELLOW) | ULA_BRIGHT)
-#define ATTR_RED_ON_BLACK     (ULA_ATTR(ULA_BLACK, ULA_RED) | ULA_BRIGHT)
-#define ATTR_GREEN_ON_BLACK   (ULA_ATTR(ULA_BLACK, ULA_GREEN) | ULA_BRIGHT)
+// Gameplay attributes (use blue paper since black is transparent on Next)
+#define ATTR_WHITE_ON_BLACK   (ULA_ATTR(ULA_BLUE, ULA_WHITE) | ULA_BRIGHT)
+#define ATTR_YELLOW_ON_BLACK  (ULA_ATTR(ULA_BLUE, ULA_YELLOW) | ULA_BRIGHT)
+#define ATTR_RED_ON_BLACK     (ULA_ATTR(ULA_BLUE, ULA_RED) | ULA_BRIGHT)
+#define ATTR_GREEN_ON_BLACK   (ULA_ATTR(ULA_BLUE, ULA_GREEN) | ULA_BRIGHT)
 #define ATTR_YELLOW_ON_BLUE   (ULA_ATTR(ULA_BLUE, ULA_YELLOW) | ULA_BRIGHT)
+#define ATTR_WHITE_ON_RED     (ULA_ATTR(ULA_RED, ULA_WHITE) | ULA_BRIGHT)
+#define ATTR_YELLOW_ON_RED    (ULA_ATTR(ULA_RED, ULA_YELLOW) | ULA_BRIGHT)
+
+// Menu attributes (actual black paper - use when Layer2/tilemap disabled)
+#define MENU_WHITE_ON_BLACK   (ULA_ATTR(ULA_BLACK, ULA_WHITE) | ULA_BRIGHT)
+#define MENU_YELLOW_ON_BLACK  (ULA_ATTR(ULA_BLACK, ULA_YELLOW) | ULA_BRIGHT)
+#define MENU_RED_ON_BLACK     (ULA_ATTR(ULA_BLACK, ULA_RED) | ULA_BRIGHT)
 
 // Clear ULA screen (pixels and attributes)
 void ula_clear(void);

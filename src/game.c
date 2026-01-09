@@ -52,6 +52,12 @@ uint8_t input_read(void) {
     keys = z80_inp(0xBFFE);
     if (!(keys & 0x10)) result |= INPUT_PAUSE;  // H
 
+    // Row 1-5 (0xF7FE) - D is not here, it's in row A-G
+    // Row A-G (0xFDFE) - A=bit0, S=bit1, D=bit2, F=bit3, G=bit4
+    // Note: A is already read above for INPUT_DOWN
+    keys = z80_inp(0xFDFE);
+    if (!(keys & 0x04)) result |= INPUT_DEBUG;  // D
+
     // Also support cursor keys via Kempston joystick port (0x1F)
     keys = z80_inp(0x1F);
     if (keys & 0x08) result |= INPUT_UP;
@@ -97,6 +103,7 @@ void game_init(void) {
     game.crash_timer = 0;
     game.crash_type = CRASH_NONE;
     game.survival_timer = 0;
+    game.debug_display = 0;
 
     // Reset hole collision cooldown
     hole_cooldown = 0;
@@ -242,13 +249,15 @@ static void render_hud_text(void) {
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
 
-    // Debug: show segment and block counter
-    ula_print_at(0, 22, "SEG:", ATTR_WHITE_ON_BLACK);
-    ula_print_num(4, 22, level_get_segment_index() + 1, ATTR_YELLOW_ON_BLACK);
-    ula_print_at(7, 22, "/", ATTR_WHITE_ON_BLACK);
-    ula_print_num(8, 22, level_state.def->segment_count, ATTR_YELLOW_ON_BLACK);
-    ula_print_at(0, 23, "BLK:", ATTR_WHITE_ON_BLACK);
-    ula_print_num(4, 23, level_get_blocks_remaining(), ATTR_YELLOW_ON_BLACK);
+    // Debug: show segment and block counter (toggle with D key)
+    if (game.debug_display) {
+        ula_print_at(0, 21, "TOT:      ", ATTR_WHITE_ON_RED);
+        ula_print_num(4, 21, level_state.def->segment_count, ATTR_YELLOW_ON_RED);
+        ula_print_at(0, 22, "SEG:      ", ATTR_WHITE_ON_RED);
+        ula_print_num(4, 22, level_get_segment_index() + 1, ATTR_YELLOW_ON_RED);
+        ula_print_at(0, 23, "BLK:      ", ATTR_WHITE_ON_RED);
+        ula_print_num(4, 23, level_get_blocks_remaining(), ATTR_YELLOW_ON_RED);
+    }
 }
 
 // Update during dying state - just move enemies, no scrolling

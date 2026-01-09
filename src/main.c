@@ -22,9 +22,9 @@ static void wait_vblank(void) {
 // Draw title screen
 static void draw_title(void) {
     ula_clear();
-    ula_print_at(6, 5,  "     NEBULA 8", ATTR_YELLOW_ON_BLACK);
-    ula_print_at(6, 8,  " ZX SPECTRUM NEXT", ATTR_YELLOW_ON_BLACK);
-    ula_print_at(6, 12, "PRESS FIRE TO START", ATTR_WHITE_ON_BLACK);
+    ula_print_at(6, 5,  "     NEBULA 8", MENU_YELLOW_ON_BLACK);
+    ula_print_at(6, 8,  " ZX SPECTRUM NEXT", MENU_YELLOW_ON_BLACK);
+    ula_print_at(6, 12, "PRESS FIRE TO START", MENU_WHITE_ON_BLACK);
 }
 
 // Draw CRASH text
@@ -37,10 +37,10 @@ static void draw_gameover(void) {
     uint8_t score_len = 0;
     uint16_t s = game.score;
     uint8_t total_len, x;
-    
+
     ula_clear();
-    ula_print_at(6, 10, "     GAME OVER", ATTR_RED_ON_BLACK);
-    ula_print_at(6, 16, "PRESS FIRE TO START", ATTR_WHITE_ON_BLACK);
+    ula_print_at(6, 10, "     GAME OVER", MENU_RED_ON_BLACK);
+    ula_print_at(6, 16, "PRESS FIRE TO START", MENU_WHITE_ON_BLACK);
 
     // Calculate score digit count
     if (s == 0) {
@@ -57,8 +57,8 @@ static void draw_gameover(void) {
     total_len = 7 + score_len;
     x = (32 - total_len) / 2;
 
-    ula_print_at(x, 12, "SCORE: ", ATTR_WHITE_ON_BLACK);
-    ula_print_num(x + 7, 12, game.score, ATTR_WHITE_ON_BLACK);
+    ula_print_at(x, 12, "SCORE: ", MENU_WHITE_ON_BLACK);
+    ula_print_num(x + 7, 12, game.score, MENU_WHITE_ON_BLACK);
 }
 
 // Apply screen shake
@@ -115,7 +115,7 @@ int main(void) {
     uint8_t gameover_shown = 0;
 
     ula_clear();
-    ula_print_at(8, 10, "INITIALISING...", ATTR_WHITE_ON_BLACK);
+    ula_print_at(8, 10, "INITIALISING...", MENU_WHITE_ON_BLACK);
 
     // Initialize
     init_next();
@@ -150,8 +150,8 @@ int main(void) {
                     break;
                 }
                 else {
-                    ula_print_at(2, 10, "        ", ATTR_YELLOW_ON_BLACK);
-                    ula_print_at(22, 10, "        ", ATTR_YELLOW_ON_BLACK);
+                    ula_print_at(2, 10, "        ", 0x00);
+                    ula_print_at(22, 10, "        ", 0x00);
                 }
 
                 // R key to restart game
@@ -159,6 +159,18 @@ int main(void) {
                     debounce = 15;
                     game_init();
                     break;
+                }
+
+                // D key to toggle debug display
+                if ((input & INPUT_DEBUG) && debounce == 0) {
+                    debounce = 15;
+                    game.debug_display = !game.debug_display;
+                    // Clear debug area when turning off (use 0x00 for transparent)
+                    if (!game.debug_display) {
+                        ula_print_at(0, 21, "          ", 0x00);
+                        ula_print_at(0, 22, "          ", 0x00);
+                        ula_print_at(0, 23, "          ", 0x00);
+                    }
                 }
 
                 game_update();
@@ -192,7 +204,7 @@ int main(void) {
                     debounce = 15;
                     game.state = STATE_PLAYING;
                     // Clear the PAUSED text
-                    ula_print_at(12, 11, "        ", ATTR_WHITE_ON_BLACK);
+                    ula_print_at(12, 11, "        ", 0x00);
                 }
                 break;
 
@@ -224,8 +236,8 @@ int main(void) {
                 if ((input & INPUT_FIRE) && debounce == 0) {
                     debounce = 15;
                     // Clear text
-                    ula_print_at(2, 10, "        ", ATTR_RED_ON_BLACK);
-                    ula_print_at(22, 10, "        ", ATTR_RED_ON_BLACK);
+                    ula_print_at(2, 10, "        ", 0x00);
+                    ula_print_at(22, 10, "        ", 0x00);
                     sound_stop_all();
                     game.state = STATE_GAMEOVER;
                 }
@@ -261,8 +273,8 @@ int main(void) {
                 if ((input & INPUT_FIRE) && debounce == 0) {
                     debounce = 10;
                     // Clear text
-                    ula_print_at(2, 10, "         ", ATTR_GREEN_ON_BLACK);
-                    ula_print_at(21, 10, "         ", ATTR_GREEN_ON_BLACK);
+                    ula_print_at(2, 10, "         ", 0x00);
+                    ula_print_at(21, 10, "         ", 0x00);
                     // Restart game (could advance to next level later)
                     game_init();
                 }
