@@ -17,6 +17,11 @@ Controls:
   Ctrl+Click on grid: Replace all pixels of clicked color with selected color
   Click on palette: Select color
   Mouse wheel on sheet: Scroll if sheet is large
+  C: Copy selected tile
+  V: Paste to selected tile
+  R: Rotate 90 degrees clockwise
+  H: Flip horizontal
+  F: Flip vertical
   S: Save
   Z: Undo last change
   ESC: Quit
@@ -102,6 +107,9 @@ class SpriteEditor:
 
         # Current tile being edited (as pygame Surface)
         self.current_tile = None
+
+        # Clipboard for copy/paste
+        self.clipboard = None
 
         # Font for labels
         self.font = pygame.font.Font(None, 24)
@@ -219,6 +227,44 @@ class SpriteEditor:
                     self.current_tile.set_at((x, y), fill_color)
 
         self.apply_tile_to_working()
+
+    def copy_tile(self):
+        """Copy current tile to clipboard"""
+        if self.current_tile:
+            self.clipboard = self.current_tile.copy()
+            print(f"Copied tile {chr(ord('A') + self.selected_tile[0])}{self.selected_tile[1]}")
+
+    def paste_tile(self):
+        """Paste clipboard to current tile"""
+        if self.clipboard and self.current_tile:
+            self.save_undo()
+            self.current_tile = self.clipboard.copy()
+            self.apply_tile_to_working()
+            print(f"Pasted to tile {chr(ord('A') + self.selected_tile[0])}{self.selected_tile[1]}")
+
+    def rotate_tile(self):
+        """Rotate current tile 90 degrees clockwise"""
+        if self.current_tile:
+            self.save_undo()
+            self.current_tile = pygame.transform.rotate(self.current_tile, -90)
+            self.apply_tile_to_working()
+            print(f"Rotated tile {chr(ord('A') + self.selected_tile[0])}{self.selected_tile[1]}")
+
+    def flip_horizontal(self):
+        """Flip current tile horizontally"""
+        if self.current_tile:
+            self.save_undo()
+            self.current_tile = pygame.transform.flip(self.current_tile, True, False)
+            self.apply_tile_to_working()
+            print(f"H-flipped tile {chr(ord('A') + self.selected_tile[0])}{self.selected_tile[1]}")
+
+    def flip_vertical(self):
+        """Flip current tile vertically"""
+        if self.current_tile:
+            self.save_undo()
+            self.current_tile = pygame.transform.flip(self.current_tile, False, True)
+            self.apply_tile_to_working()
+            print(f"V-flipped tile {chr(ord('A') + self.selected_tile[0])}{self.selected_tile[1]}")
 
     def save(self):
         """Save working image back to file"""
@@ -385,6 +431,16 @@ class SpriteEditor:
                         self.save()
                     elif event.key == pygame.K_z:
                         self.undo()
+                    elif event.key == pygame.K_c:
+                        self.copy_tile()
+                    elif event.key == pygame.K_v:
+                        self.paste_tile()
+                    elif event.key == pygame.K_r:
+                        self.rotate_tile()
+                    elif event.key == pygame.K_h:
+                        self.flip_horizontal()
+                    elif event.key == pygame.K_f:
+                        self.flip_vertical()
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     mx, my = event.pos

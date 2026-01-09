@@ -13,6 +13,8 @@
 #include "tilemap.h"
 #include "ula.h"
 #include "sound.h"
+#include "level.h"
+#include "level1.h"
 
 // Global game data
 GameData game;
@@ -28,9 +30,10 @@ uint8_t input_read(void) {
     // Read keyboard - using direct port reading
     // Q = up, A = down, O = left, P = right, Space = fire
 
-    // Row Q-T (0xFBFE)
+    // Row Q-T (0xFBFE) - Q=bit0, W=bit1, E=bit2, R=bit3, T=bit4
     keys = z80_inp(0xFBFE);
-    if (!(keys & 0x01)) result |= INPUT_UP;     // Q
+    if (!(keys & 0x01)) result |= INPUT_UP;      // Q
+    if (!(keys & 0x08)) result |= INPUT_RESTART; // R
 
     // Row A-G (0xFDFE)
     keys = z80_inp(0xFDFE);
@@ -62,6 +65,18 @@ uint8_t input_read(void) {
 
 // Initialize game state
 void game_init(void) {
+    // Reset scroll positions FIRST (before tilemap_refresh uses them)
+    scroll_y = 0;
+    layer2_scroll(0);
+    layer2_scroll_x(0);
+    tilemap_scroll(0);
+
+    // Initialize level system
+    level_init(&level1_def);
+
+    // Refresh tilemap with level data (now scroll_y is 0)
+    tilemap_refresh();
+
     // Initialize player
     player_init();
 
@@ -82,12 +97,6 @@ void game_init(void) {
     game.crash_timer = 0;
     game.crash_type = CRASH_NONE;
     game.survival_timer = 0;
-
-    // Reset scroll positions
-    scroll_y = 0;
-    layer2_scroll(0);
-    layer2_scroll_x(0);
-    tilemap_scroll(0);
 
     // Reset hole collision cooldown
     hole_cooldown = 0;
@@ -147,6 +156,9 @@ void game_update(void) {
     // Update scrolling (vertical scroll - decrement to scroll downward)
     scroll_y -= SCROLL_SPEED;
 
+    // Update level system (advances segments based on scroll)
+    level_update(scroll_y);
+
     // Tilemap scrolls at full speed
     tilemap_scroll(scroll_y);
 
@@ -184,6 +196,12 @@ void game_update(void) {
         }
     }
 
+    // Check for level complete
+    if (level_is_complete()) {
+        game.state = STATE_LEVELCOMPLETE;
+        return;
+    }
+
     // Spawn enemies periodically
     game.frame_count++;
     if (game.frame_count % 60 == 0) {
@@ -210,9 +228,11 @@ void game_update(void) {
 
 // Get screen shake offset (for visual effect)
 int8_t game_get_shake_offset(void) {
-    if (game.shake_timer == 0) return 0;
+    // Disabled for now
+    return 0;
+    // if (game.shake_timer == 0) return 0;
     // Alternating offset based on timer
-    return (game.shake_timer & 0x02) ? 2 : -2;
+    // return (game.shake_timer & 0x02) ? 2 : -2;
 }
 
 // Render HUD text on ULA
@@ -221,6 +241,14 @@ static void render_hud_text(void) {
     ula_print_num(6, 0, game.score, ATTR_YELLOW_ON_BLACK);
     ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
     ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
+
+    // Debug: show segment and block counter
+    ula_print_at(0, 22, "SEG:", ATTR_WHITE_ON_BLACK);
+    ula_print_num(4, 22, level_get_segment_index() + 1, ATTR_YELLOW_ON_BLACK);
+    ula_print_at(7, 22, "/", ATTR_WHITE_ON_BLACK);
+    ula_print_num(8, 22, level_state.def->segment_count, ATTR_YELLOW_ON_BLACK);
+    ula_print_at(0, 23, "BLK:", ATTR_WHITE_ON_BLACK);
+    ula_print_num(4, 23, level_get_blocks_remaining(), ATTR_YELLOW_ON_BLACK);
 }
 
 // Update during dying state - just move enemies, no scrolling

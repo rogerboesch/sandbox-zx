@@ -114,6 +114,9 @@ int main(void) {
     uint8_t debounce = 0;
     uint8_t gameover_shown = 0;
 
+    ula_clear();
+    ula_print_at(8, 10, "INITIALISING...", ATTR_WHITE_ON_BLACK);
+
     // Initialize
     init_next();
 
@@ -151,6 +154,13 @@ int main(void) {
                     ula_print_at(22, 10, "        ", ATTR_YELLOW_ON_BLACK);
                 }
 
+                // R key to restart game
+                if ((input & INPUT_RESTART) && debounce == 0) {
+                    debounce = 15;
+                    game_init();
+                    break;
+                }
+
                 game_update();
                 game_render();
                 sound_update();
@@ -160,20 +170,20 @@ int main(void) {
                     apply_shake();
                 }
 
-                // Border flash color based on crash type
-                if (game.crash_timer > 0) {
-                    uint8_t flash_color;
-                    switch (game.crash_type) {
-                        case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
-                        case CRASH_ENEMY:      flash_color = 0x06; break;  // Yellow
-                        case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
-                        default:               flash_color = 0x07; break;  // White (level)
-                    }
-                    z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
-                }
-                else {
-                    z80_outp(0xFE, 0x00);
-                }
+                // Border flash disabled for now
+                // if (game.crash_timer > 0) {
+                //     uint8_t flash_color;
+                //     switch (game.crash_type) {
+                //         case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
+                //         case CRASH_ENEMY:      flash_color = 0x02; break;  // Red
+                //         case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
+                //         default:               flash_color = 0x07; break;  // White (level)
+                //     }
+                //     z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
+                // }
+                // else {
+                //     z80_outp(0xFE, 0x00);
+                // }
                 break;
 
             case STATE_PAUSED:
@@ -202,13 +212,13 @@ int main(void) {
                     apply_shake();
                 }
 
-                // Border flash if still active
-                if (game.crash_timer > 0) {
-                    z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
-                }
-                else {
-                    z80_outp(0xFE, 0x00);
-                }
+                // Border flash disabled for now
+                // if (game.crash_timer > 0) {
+                //     z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
+                // }
+                // else {
+                //     z80_outp(0xFE, 0x00);
+                // }
 
                 // Wait for fire to go to game over screen
                 if ((input & INPUT_FIRE) && debounce == 0) {
@@ -239,6 +249,22 @@ int main(void) {
                     enable_gameplay();
                     game_init();
                     gameover_shown = 0;
+                }
+                break;
+
+            case STATE_LEVELCOMPLETE:
+                // Show level win message
+                ula_print_at(2, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                ula_print_at(21, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+
+                // Wait for fire to restart
+                if ((input & INPUT_FIRE) && debounce == 0) {
+                    debounce = 10;
+                    // Clear text
+                    ula_print_at(2, 10, "         ", ATTR_GREEN_ON_BLACK);
+                    ula_print_at(21, 10, "         ", ATTR_GREEN_ON_BLACK);
+                    // Restart game (could advance to next level later)
+                    game_init();
                 }
                 break;
 

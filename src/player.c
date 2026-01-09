@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "player.h"
 #include "sprites.h"
+#include "level.h"
 
 // Global player
 Player player;
@@ -61,6 +62,8 @@ void player_update_cooldowns(void) {
 // Returns crash type (CRASH_LEVEL) or CRASH_NONE
 uint8_t player_check_level(void) {
     int16_t player_center;
+    int16_t left, right;
+    int16_t l_left, l_right, r_left, r_right;
 
     // Only check if not invincible
     if (player.invincible != 0) {
@@ -69,8 +72,27 @@ uint8_t player_check_level(void) {
 
     player_center = player.x + (PLAYER_WIDTH / 2);
 
-    if (player_center < LEVEL_LEFT || player_center > LEVEL_RIGHT) {
+    // Check if we have two lanes
+    if (level_is_both_lanes() && !level_in_transition()) {
+        // Two separate lanes - must be in one of them
+        level_get_both_boundaries(&l_left, &l_right, &r_left, &r_right);
+
+        // Check if player is in left lane OR right lane
+        if ((player_center >= l_left && player_center <= l_right) ||
+            (player_center >= r_left && player_center <= r_right)) {
+            return CRASH_NONE;  // Player is in one of the lanes
+        }
+
+        // Player is not in either lane
         return CRASH_LEVEL;
+    }
+    else {
+        // Single lane or transition (lanes connected)
+        level_get_boundaries(&left, &right);
+
+        if (player_center < left || player_center > right) {
+            return CRASH_LEVEL;
+        }
     }
 
     return CRASH_NONE;
@@ -79,15 +101,21 @@ uint8_t player_check_level(void) {
 // Apply damage to player
 // Returns 1 if player died
 uint8_t player_hit(void) {
-    player.lives--;
+    // TESTING: Disable dying
+    // player.lives--;
     player.invincible = 120;  // 2 seconds of invincibility
 
-    return (player.lives == 0) ? 1 : 0;
+    // return (player.lives == 0) ? 1 : 0;
+    return 0;  // Never die for testing
 }
 
 // Reset player to center after crash
 void player_reset_position(void) {
-    player.x = PLAYER_START_X;
+    int16_t left, right;
+
+    // Reset to center of current lane(s)
+    level_get_boundaries(&left, &right);
+    player.x = (left + right) / 2 - (PLAYER_WIDTH / 2);
 }
 
 // Render player and shadow

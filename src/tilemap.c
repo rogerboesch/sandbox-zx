@@ -4,16 +4,22 @@
 #include <string.h>
 #include "tilemap.h"
 #include "tileset.h"
+#include "level.h"
 
 // Tile indices for tilemap
 #define TILE_ROAD_LEFT    0x00  // left border (G6)
-#define TILE_ROAD_MID     0x01  // middle (L6)
-#define TILE_ROAD_RIGHT   0x02  // right border (H6)
-#define TILE_TRANS        0x03  // transparent/empty
-#define TILE_HOLE_TL      0x04  // hole top-left (K0)
-#define TILE_HOLE_TR      0x05  // hole top-right (L0)
-#define TILE_HOLE_BL      0x06  // hole bottom-left (K1)
-#define TILE_HOLE_BR      0x07  // hole bottom-right (L1)
+#define TILE_ROAD_MID_TL  0x01  // highway middle top-left (E0)
+#define TILE_ROAD_MID_TR  0x02  // highway middle top-right (F0)
+#define TILE_ROAD_MID_BL  0x03  // highway middle bottom-left (E1)
+#define TILE_ROAD_MID_BR  0x04  // highway middle bottom-right (F1)
+#define TILE_ROAD_RIGHT   0x05  // right border (H6)
+#define TILE_TRANS        0x06  // transparent/empty
+#define TILE_HOLE_TL      0x07  // hole top-left (K0)
+#define TILE_HOLE_TR      0x08  // hole top-right (L0)
+#define TILE_HOLE_BL      0x09  // hole bottom-left (K1)
+#define TILE_HOLE_BR      0x0A  // hole bottom-right (L1)
+#define TILE_LANE_MARK    0x0B  // lane marker (I4)
+#define TILE_LANE_EDGE    0x0C  // lane start/end marker (J4)
 
 // Transparent tile (bright magenta = palette index 11 = 0xBB per byte)
 static const uint8_t tile_transparent[32] = {
@@ -23,16 +29,21 @@ static const uint8_t tile_transparent[32] = {
     0xBB, 0xBB, 0xBB, 0xBB,  0xBB, 0xBB, 0xBB, 0xBB
 };
 
-// Tilemap tiles array (8 tiles for road + holes)
-static const uint8_t * const tilemap_tiles[8] = {
+// Tilemap tiles array (13 tiles for road + holes + lane markers)
+static const uint8_t * const tilemap_tiles[13] = {
     tile_G6,           // 0: TILE_ROAD_LEFT
-    tile_L6,           // 1: TILE_ROAD_MID
-    tile_H6,           // 2: TILE_ROAD_RIGHT
-    tile_transparent,  // 3: TILE_TRANS
-    tile_K0,           // 4: TILE_HOLE_TL
-    tile_L0,           // 5: TILE_HOLE_TR
-    tile_K1,           // 6: TILE_HOLE_BL
-    tile_L1            // 7: TILE_HOLE_BR
+    tile_E0,           // 1: TILE_ROAD_MID_TL
+    tile_F0,           // 2: TILE_ROAD_MID_TR
+    tile_E1,           // 3: TILE_ROAD_MID_BL
+    tile_F1,           // 4: TILE_ROAD_MID_BR
+    tile_H6,           // 5: TILE_ROAD_RIGHT
+    tile_transparent,  // 6: TILE_TRANS
+    tile_K0,           // 7: TILE_HOLE_TL
+    tile_L0,           // 8: TILE_HOLE_TR
+    tile_K1,           // 9: TILE_HOLE_BL
+    tile_L1,           // 10: TILE_HOLE_BR
+    tile_I4,           // 11: TILE_LANE_MARK
+    tile_J4            // 12: TILE_LANE_EDGE
 };
 
 // Tilemap registers
@@ -50,10 +61,14 @@ static const uint8_t * const tilemap_tiles[8] = {
 // Max tiles: (0x7FFF - 0x6600) / 32 = 208 tiles
 #define TILEMAP_ADDR    0x6000
 #define TILES_ADDR      0x6600
-#define MAX_TILES       8    // 8 tiles (8 * 32 = 256 bytes)
+#define MAX_TILES       13   // 13 tiles (13 * 32 = 416 bytes)
+#define TILEMAP_WIDTH   40   // 40 tiles wide
 
 // Scroll state
 int16_t scroll_y = 0;
+
+// Last generated row (to avoid regenerating same rows)
+static int16_t last_generated_scroll = 0;
 
 // Copy tile definitions from ROM to tilemap memory
 static void tilemap_define_tiles(void) {
@@ -108,83 +123,72 @@ static void tilemap_setup_palette(void) {
     ZXN_NEXTREG(0x43, 0x00);
 }
 
-// Fill tilemap in center with left/middle/right borders
-// Left border: cyan line on left, Middle: solid black, Right border: cyan line on right
-// Sporadic holes (16px wide) on left or right side that player must avoid
-static void tilemap_fill(void) {
-    uint8_t *tmap = (uint8_t *)TILEMAP_ADDR;
-    uint8_t x, y;
-    uint8_t hole_side;  // 0=no hole, 1=left hole, 2=right hole
-    uint8_t hole_active;
+// Tilemap 40x32 is 320x256 pixels, but ULA screen is 256x192
+// From testing: row 0 is just ABOVE the visible ULA area
+// Row 1 is at the TOP of visible ULA screen when scroll_y = 0
+//
+// scroll_y is 0 or negative (0, -1, -2, ... -255, wraps)
+// scroll_y-- makes content move DOWN on screen, new content appears at TOP
+//
+// Row at top of tilemap = ((256 + scroll_y) / 8) & 0x1F
+// At scroll_y = 0: row 0 at tilemap top (row 1 at visible top)
+// At scroll_y = -8: row 31 at tilemap top, row 0 moved down 8px
 
-    // Level spans tiles 16-23 (8 tiles wide)
-    // x=16: left border, x=17-19: left half, x=20-22: right half, x=23: right border
-    for (y = 0; y < 32; y++) {
-        // Explicit hole positions to ensure safe start and both sides
-        // Player starts at tilemap row ~25 (due to +32 sprite offset)
-        // So avoid rows 20-31, place holes at rows 4-5 (right) and 12-13 (left)
-        hole_active = 0;
-        hole_side = 0;
+// Calculate world_y for a tilemap row given current scroll
+// row: tilemap row index (0-31)
+// returns: world position in pixels that this row should display
+static int16_t calc_world_y_for_row(uint8_t row) {
+    // Row at top of tilemap (may be in buffer above visible)
+    uint8_t top_row = (uint8_t)(((256 + scroll_y) / 8) & 0x1F);
 
-        if (y == 4 || y == 5) {
-            hole_active = 1;
-            hole_side = 2;  // Right side
-        }
-        else if (y == 12 || y == 13) {
-            hole_active = 1;
-            hole_side = 1;  // Left side
-        }
+    // How many rows is this row below the top row (wrapping at 32)
+    uint8_t rows_from_top = (row - top_row) & 0x1F;
 
-        for (x = 0; x < 40; x++) {
-            uint8_t tile;
-            uint8_t is_hole = 0;
-            uint8_t hole_row_top = 0;  // 1 if top row of 2x2 hole block
+    // world_y for top row = -scroll_y (scroll amount in pixels)
+    // Each row below adds 8 pixels
+    int16_t world_y = (-scroll_y) + (rows_from_top * 8);
 
-            // Check if this tile should be a hole (half level width)
-            if (hole_active) {
-                if (hole_side == 1 && x >= 16 && x <= 19) {
-                    is_hole = 1;  // Left half hole (32px)
-                } else if (hole_side == 2 && x >= 20 && x <= 23) {
-                    is_hole = 1;  // Right half hole (32px)
-                }
-                // Top row of hole block (y=4 or y=12)
-                hole_row_top = (y == 4 || y == 12);
-            }
+    return world_y;
+}
 
-            if (is_hole) {
-                // 2x2 hole pattern: K0,L0 / K1,L1
-                uint8_t is_left_of_pair = (x & 1) == 0;  // Even x = left tile
-                if (hole_row_top) {
-                    tile = is_left_of_pair ? TILE_HOLE_TL : TILE_HOLE_TR;
-                }
-                else {
-                    tile = is_left_of_pair ? TILE_HOLE_BL : TILE_HOLE_BR;
-                }
-            } else if (x == 16) {
-                // Left border
-                tile = TILE_ROAD_LEFT;
-            } else if (x >= 17 && x <= 22) {
-                // Middle
-                tile = TILE_ROAD_MID;
-            } else if (x == 23) {
-                // Right border
-                tile = TILE_ROAD_RIGHT;
-            }
-            else {
-                tile = TILE_TRANS;
-            }
-            *tmap++ = tile;
-        }
+// Generate a single tilemap row using level data
+static void tilemap_generate_row(uint8_t row) {
+    uint8_t *tmap = (uint8_t *)(TILEMAP_ADDR + row * TILEMAP_WIDTH);
+    uint8_t tiles[TILEMAP_WIDTH];
+    uint8_t x;
+    int16_t world_y;
+
+    // Calculate world position for this row
+    world_y = calc_world_y_for_row(row);
+
+    // Get tiles from level system
+    level_generate_row(row, world_y, tiles);
+
+    // Copy to tilemap memory
+    for (x = 0; x < TILEMAP_WIDTH; x++) {
+        tmap[x] = tiles[x];
     }
 }
 
-// Initialize tilemap
+// Fill entire tilemap using level data
+static void tilemap_fill_from_level(void) {
+    uint8_t y;
+
+    for (y = 0; y < 32; y++) {
+        tilemap_generate_row(y);
+    }
+}
+
+// Public function to refresh tilemap (call after level_init)
+void tilemap_refresh(void) {
+    tilemap_fill_from_level();
+    last_generated_scroll = scroll_y;
+}
+
+// Initialize tilemap hardware (call before level_init)
 void tilemap_init(void) {
     // Define tile patterns at 0x6600
     tilemap_define_tiles();
-
-    // Fill tilemap data at 0x6000
-    tilemap_fill();
 
     // Set up palette
     tilemap_setup_palette();
@@ -207,11 +211,23 @@ void tilemap_init(void) {
     // When a pixel has this palette index, it shows through to layer below
     ZXN_NEXTREG(REG_TILEMAP_TRANS, 0x0B);  // 11 = bright magenta
 
+    // Reset scroll tracking
+    last_generated_scroll = 0;
+
+    // NOTE: tilemap content is filled by tilemap_refresh() after level_init()
     // Tilemap starts disabled
 }
 
 // Enable tilemap display
 void tilemap_enable(void) {
+    // Set tilemap clip window to ULA screen area (256x192)
+    // Register 0x1B: X1, X2, Y1, Y2 (written sequentially)
+    // Values are in 320x256 space, need to match ULA position
+    ZXN_NEXTREG(0x1B, 0);     // X1 = 0
+    ZXN_NEXTREG(0x1B, 159);   // X2 = 159 (160 pixels wide for game area)
+    ZXN_NEXTREG(0x1B, 32);    // Y1 = 32 (ULA starts 32 pixels down in 320x256 space)
+    ZXN_NEXTREG(0x1B, 223);   // Y2 = 223 (32 + 191)
+
     // Reg 0x6B Tilemap Control:
     // Bit 7: Enable tilemap (1)
     // Bit 6: 0=40x32, 1=80x32 (0)
@@ -236,9 +252,57 @@ void tilemap_disable(void) {
 }
 
 // Scroll tilemap vertically (level - full speed)
+// Also updates tilemap rows when new rows scroll into view
 void tilemap_scroll(int16_t offset_y) {
+    int16_t scroll_diff;
+    uint8_t row_diff;
+    uint8_t row;
+    uint8_t old_top_row, new_top_row;
+
+    // Calculate row at top BEFORE updating scroll
+    old_top_row = (uint8_t)(((256 + scroll_y) / 8) & 0x1F);
+
+    // Update hardware scroll register
     IO_NEXTREG_REG = REG_TILEMAP_YSCROLL;
     IO_NEXTREG_DAT = (uint8_t)(offset_y & 0xFF);
+
+    // Store current scroll
+    scroll_y = offset_y;
+
+    // Calculate row at top AFTER updating scroll
+    new_top_row = (uint8_t)(((256 + scroll_y) / 8) & 0x1F);
+
+    // Check if we need to regenerate rows
+    // scroll_y-- means content moves DOWN, new content appears at TOP
+    // When offset_y decreases (goes more negative), new rows appear at top
+
+    scroll_diff = last_generated_scroll - offset_y;
+
+    // Only handle forward scrolling (scroll_diff > 0 means offset_y decreased)
+    if (scroll_diff <= 0) {
+        return;
+    }
+
+    row_diff = (uint8_t)(scroll_diff / 8);
+
+    if (row_diff > 0) {
+        if (row_diff >= 32) {
+            // Major scroll - regenerate all
+            tilemap_fill_from_level();
+        }
+        else {
+            // Regenerate rows that are now at the top (scrolled into view)
+            // new_top_row is the row now at the top of the tilemap
+            // We need to regenerate row_diff rows starting from new_top_row
+            for (row = 0; row < row_diff && row < 32; row++) {
+                // new_top_row is first, then new_top_row+1, etc (going down)
+                uint8_t gen_row = (new_top_row + row) & 0x1F;
+                tilemap_generate_row(gen_row);
+            }
+        }
+
+        last_generated_scroll = offset_y;
+    }
 }
 
 // Set layer priority for gameplay
