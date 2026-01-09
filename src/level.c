@@ -310,6 +310,17 @@ static uint8_t get_segment_at_world_y(int16_t world_y,
     return 0xFF;
 }
 
+// Get lane boundaries at a specific world Y position
+// world_y: player's world position (scroll offset + screen Y)
+// Returns lane config via out_lanes, returns segment index
+uint8_t level_get_boundaries_at_y(int16_t world_y, uint8_t* out_lanes,
+                               int16_t* l_left, int16_t* l_right,
+                               int16_t* r_left, int16_t* r_right) {
+    int16_t seg_start_y, seg_end_y;
+    return get_segment_at_world_y(world_y, out_lanes, l_left, l_right, r_left, r_right,
+                           &seg_start_y, &seg_end_y);
+}
+
 // Helper: get the correct middle tile for 2x2 highway pattern
 // Every 10 rows (80 pixels), use lane marker tile
 // At segment start/end, use lane edge tile

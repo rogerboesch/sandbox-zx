@@ -15,6 +15,8 @@
 #include "sound.h"
 #include "level.h"
 #include "level1.h"
+#include "game_hud.h"
+#include "debug_hud.h"
 
 // Global game data
 GameData game;
@@ -103,7 +105,9 @@ void game_init(void) {
     game.crash_timer = 0;
     game.crash_type = CRASH_NONE;
     game.survival_timer = 0;
-    game.debug_display = 0;
+
+    // Initialize debug HUD
+    debug_hud_init();
 
     // Reset hole collision cooldown
     hole_cooldown = 0;
@@ -142,23 +146,23 @@ void game_update(void) {
         game.crash_type = crash;
     }
 
-    // Check for hole collision - reduce score, shake screen, blue flash (no invincibility)
-    if (hole_cooldown > 0) {
-        hole_cooldown--;
-    }
-    else if (collision_check_hole(player.x, player.y, scroll_y)) {
-        if (game.score >= 200) {
-            game.score -= 200;
-        }
-        else {
-            game.score = 0;
-        }
-        game.shake_timer = SHAKE_DURATION;
-        game.crash_timer = CRASH_TEXT_DURATION;
-        game.crash_type = CRASH_HOLE;
-        hole_cooldown = 30;
-        sound_hole();
-    }
+    // Check for hole collision - DISABLED until holes are rendered
+    // if (hole_cooldown > 0) {
+    //     hole_cooldown--;
+    // }
+    // else if (collision_check_hole(player.x, player.y, scroll_y)) {
+    //     if (game.score >= 200) {
+    //         game.score -= 200;
+    //     }
+    //     else {
+    //         game.score = 0;
+    //     }
+    //     game.shake_timer = SHAKE_DURATION;
+    //     game.crash_timer = CRASH_TEXT_DURATION;
+    //     game.crash_type = CRASH_HOLE;
+    //     hole_cooldown = 30;
+    //     sound_hole();
+    // }
 
     // Update scrolling (vertical scroll - decrement to scroll downward)
     scroll_y -= SCROLL_SPEED;
@@ -242,23 +246,6 @@ int8_t game_get_shake_offset(void) {
     // return (game.shake_timer & 0x02) ? 2 : -2;
 }
 
-// Render HUD text on ULA
-static void render_hud_text(void) {
-    ula_print_at(0, 0, "SCORE", ATTR_WHITE_ON_BLACK);
-    ula_print_num(6, 0, game.score, ATTR_YELLOW_ON_BLACK);
-    ula_print_at(25, 0, "LIVES", ATTR_WHITE_ON_BLACK);
-    ula_print_num(31, 0, player.lives, ATTR_YELLOW_ON_BLACK);
-
-    // Debug: show segment and block counter (toggle with D key)
-    if (game.debug_display) {
-        ula_print_at(0, 21, "TOT:      ", ATTR_WHITE_ON_RED);
-        ula_print_num(4, 21, level_state.def->segment_count, ATTR_YELLOW_ON_RED);
-        ula_print_at(0, 22, "SEG:      ", ATTR_WHITE_ON_RED);
-        ula_print_num(4, 22, level_get_segment_index() + 1, ATTR_YELLOW_ON_RED);
-        ula_print_at(0, 23, "BLK:      ", ATTR_WHITE_ON_RED);
-        ula_print_num(4, 23, level_get_blocks_remaining(), ATTR_YELLOW_ON_RED);
-    }
-}
 
 // Update during dying state - just move enemies, no scrolling
 void game_update_dying(void) {
@@ -293,7 +280,8 @@ void game_render_dying(void) {
     uint8_t sprite_slot = 0;
 
     // Render HUD text overlay
-    render_hud_text();
+    game_hud_render();
+    debug_hud_render();
 
     // Hide player slots (player + shadow)
     sprite_slot = player_hide(sprite_slot);
@@ -317,7 +305,8 @@ void game_render(void) {
     uint8_t sprite_slot = 0;
 
     // Render HUD text overlay
-    render_hud_text();
+    game_hud_render();
+    debug_hud_render();
 
     // Level is rendered by tilemap hardware (scrolled via tilemap_scroll)
 

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include "player.h"
 #include "sprites.h"
+#include "tilemap.h"
 #include "level.h"
 
 // Global player
@@ -16,30 +17,51 @@ void player_init(void) {
     player.invincible = 0;
 }
 
+// Check if a position would be on a valid tile
+static uint8_t is_valid_position(int16_t x, int16_t y) {
+    int16_t center_x = x + (PLAYER_WIDTH / 2);
+    int16_t center_y = y + (PLAYER_HEIGHT / 2);
+    uint8_t tile = tilemap_get_tile_at(center_x, center_y);
+    return (tile != TILE_TRANS);
+}
+
 // Update player based on input
 // Returns 1 if fire button pressed and cooldown allows
 uint8_t player_update(uint8_t input) {
     uint8_t fire = 0;
+    int16_t new_x, new_y;
 
-    // Update player position
+    // Update player position - check tile before allowing move
     if (input & INPUT_UP) {
         if (player.y > GAME_TOP) {
-            player.y -= PLAYER_SPEED;
+            new_y = player.y - PLAYER_SPEED;
+            if (is_valid_position(player.x, new_y)) {
+                player.y = new_y;
+            }
         }
     }
     if (input & INPUT_DOWN) {
         if (player.y < GAME_BOTTOM - PLAYER_HEIGHT) {
-            player.y += PLAYER_SPEED;
+            new_y = player.y + PLAYER_SPEED;
+            if (is_valid_position(player.x, new_y)) {
+                player.y = new_y;
+            }
         }
     }
     if (input & INPUT_LEFT) {
         if (player.x > GAME_LEFT) {
-            player.x -= PLAYER_SPEED;
+            new_x = player.x - PLAYER_SPEED;
+            if (is_valid_position(new_x, player.y)) {
+                player.x = new_x;
+            }
         }
     }
     if (input & INPUT_RIGHT) {
         if (player.x < GAME_RIGHT - PLAYER_WIDTH) {
-            player.x += PLAYER_SPEED;
+            new_x = player.x + PLAYER_SPEED;
+            if (is_valid_position(new_x, player.y)) {
+                player.x = new_x;
+            }
         }
     }
 
@@ -61,38 +83,25 @@ void player_update_cooldowns(void) {
 // Check if player is outside level boundaries
 // Returns crash type (CRASH_LEVEL) or CRASH_NONE
 uint8_t player_check_level(void) {
-    int16_t player_center;
-    int16_t left, right;
-    int16_t l_left, l_right, r_left, r_right;
+    int16_t player_center_x;
+    int16_t player_center_y;
+    uint8_t tile;
 
     // Only check if not invincible
     if (player.invincible != 0) {
         return CRASH_NONE;
     }
 
-    player_center = player.x + (PLAYER_WIDTH / 2);
+    // Check tile under player center
+    player_center_x = player.x + (PLAYER_WIDTH / 2);
+    player_center_y = player.y + (PLAYER_HEIGHT / 2);
 
-    // Check if we have two lanes
-    if (level_is_both_lanes() && !level_in_transition()) {
-        // Two separate lanes - must be in one of them
-        level_get_both_boundaries(&l_left, &l_right, &r_left, &r_right);
+    // Get tile at player center position
+    tile = tilemap_get_tile_at(player_center_x, player_center_y);
 
-        // Check if player is in left lane OR right lane
-        if ((player_center >= l_left && player_center <= l_right) ||
-            (player_center >= r_left && player_center <= r_right)) {
-            return CRASH_NONE;  // Player is in one of the lanes
-        }
-
-        // Player is not in either lane
+    // If tile is transparent, player is off the road
+    if (tile == TILE_TRANS) {
         return CRASH_LEVEL;
-    }
-    else {
-        // Single lane or transition (lanes connected)
-        level_get_boundaries(&left, &right);
-
-        if (player_center < left || player_center > right) {
-            return CRASH_LEVEL;
-        }
     }
 
     return CRASH_NONE;

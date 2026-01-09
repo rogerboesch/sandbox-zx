@@ -164,6 +164,12 @@ void level_get_boundaries(int16_t* left, int16_t* right);
 void level_get_both_boundaries(int16_t* l_left, int16_t* l_right,
                                int16_t* r_left, int16_t* r_right);
 
+// Get lane boundaries at a specific world Y position (for player collision)
+// Returns segment index at that position
+uint8_t level_get_boundaries_at_y(int16_t world_y, uint8_t* out_lanes,
+                               int16_t* l_left, int16_t* l_right,
+                               int16_t* r_left, int16_t* r_right);
+
 // Check if currently in LANE_BOTH configuration
 uint8_t level_is_both_lanes(void);
 

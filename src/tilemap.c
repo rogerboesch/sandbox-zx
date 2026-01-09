@@ -338,3 +338,38 @@ void set_layers_menu(void) {
     // Bit 0 = 0 (sprites disabled)
     ZXN_NEXTREG(0x15, 0x14);  // 0b00010100 = U L S, no sprites
 }
+
+// Get tile index at screen position
+// screen_x, screen_y: pixel coordinates on screen (0-255, 0-191)
+// Returns tile index at that position, or TILE_TRANS if off-screen
+uint8_t tilemap_get_tile_at(int16_t screen_x, int16_t screen_y) {
+    uint8_t tile_x, tile_y;
+    uint8_t *tmap;
+
+    // Check bounds
+    if (screen_x < 0 || screen_x > 255 || screen_y < 0 || screen_y > 191) {
+        return TILE_TRANS;
+    }
+
+    // Convert screen X to tilemap column
+    // Tilemap has 4-tile (32 pixel) offset, so screen pixel 0 = tile 4
+    tile_x = (uint8_t)(screen_x / 8) + 4;
+
+    // Convert screen Y to tilemap row
+    // Need to account for scroll position
+    // Screen Y 0 corresponds to world Y = -scroll_y
+    // Tilemap row = ((screen_y - scroll_y) / 8) & 0x1F
+    // But scroll_y is negative, so: ((screen_y + (-scroll_y)) / 8) & 0x1F
+    // Simpler: use calc_world_y inverse
+    // tile_y in hardware = ((256 + scroll_y + screen_y) / 8) & 0x1F
+    tile_y = (uint8_t)(((256 + scroll_y + screen_y) / 8) & 0x1F);
+
+    // Clamp tile_x to valid range
+    if (tile_x >= TILEMAP_WIDTH) {
+        return TILE_TRANS;
+    }
+
+    // Read from tilemap memory
+    tmap = (uint8_t *)(TILEMAP_ADDR + tile_y * TILEMAP_WIDTH + tile_x);
+    return *tmap;
+}

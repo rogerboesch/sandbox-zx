@@ -27,4 +27,10 @@ void set_layers_menu(void);
 // Scroll state
 extern int16_t scroll_y;
 
+// Tile constants for collision checking
+#define TILE_TRANS 0x06
+
+// Get tile index at screen position (returns tile index, or TILE_TRANS if off-screen)
+uint8_t tilemap_get_tile_at(int16_t screen_x, int16_t screen_y);
+
 #endif // TILEMAP_H

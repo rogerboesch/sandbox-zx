@@ -124,7 +124,6 @@ typedef struct {
     uint8_t crash_timer;      // "CRASH" text countdown
     uint8_t crash_type;       // Type of crash for border color
     uint8_t survival_timer;   // Counts frames for survival bonus
-    uint8_t debug_display;    // Toggle debug HUD display
 } GameData;
 
 // Function prototypes - game.c

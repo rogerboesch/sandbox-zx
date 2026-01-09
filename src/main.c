@@ -7,6 +7,7 @@
 #include "tilemap.h"
 #include "ula.h"
 #include "sound.h"
+#include "debug_hud.h"
 
 // Write to Next register
 static void nextreg(uint8_t reg, uint8_t val) {
@@ -112,7 +113,7 @@ static void disable_gameplay(void) {
 int main(void) {
     uint8_t input;
     uint8_t debounce = 0;
-    uint8_t gameover_shown = 0;
+    uint8_t state_text_shown = 0;  // Flag for one-time text drawing per state
 
     ula_clear();
     ula_print_at(8, 10, "INITIALISING...", MENU_WHITE_ON_BLACK);
@@ -136,11 +137,12 @@ int main(void) {
                     ula_clear();
                     enable_gameplay();
                     game_init();
-                    gameover_shown = 0;
                 }
                 break;
 
             case STATE_PLAYING:
+                state_text_shown = 0;  // Reset for other states
+
                 // Check for pause
                 if ((input & INPUT_PAUSE) && debounce == 0) {
                     debounce = 15;
@@ -148,10 +150,6 @@ int main(void) {
                     ula_print_at(2, 10, " PAUSED ", ATTR_YELLOW_ON_BLACK);
                     ula_print_at(22, 10, " PAUSED ", ATTR_YELLOW_ON_BLACK);
                     break;
-                }
-                else {
-                    ula_print_at(2, 10, "        ", 0x00);
-                    ula_print_at(22, 10, "        ", 0x00);
                 }
 
                 // R key to restart game
@@ -164,13 +162,7 @@ int main(void) {
                 // D key to toggle debug display
                 if ((input & INPUT_DEBUG) && debounce == 0) {
                     debounce = 15;
-                    game.debug_display = !game.debug_display;
-                    // Clear debug area when turning off (use 0x00 for transparent)
-                    if (!game.debug_display) {
-                        ula_print_at(0, 21, "          ", 0x00);
-                        ula_print_at(0, 22, "          ", 0x00);
-                        ula_print_at(0, 23, "          ", 0x00);
-                    }
+                    debug_hud_toggle();
                 }
 
                 game_update();
@@ -204,33 +196,29 @@ int main(void) {
                     debounce = 15;
                     game.state = STATE_PLAYING;
                     // Clear the PAUSED text
-                    ula_print_at(12, 11, "        ", 0x00);
+                    ula_print_at(2, 10, "        ", 0x00);
+                    ula_print_at(22, 10, "        ", 0x00);
                 }
                 break;
 
             case STATE_DYING:
+                // Show "You lost" once when entering this state
+                if (!state_text_shown) {
+                    state_text_shown = 1;
+                    ula_print_at(2, 10, "YOU LOST", ATTR_RED_ON_BLACK);
+                    ula_print_at(22, 10, "YOU LOST", ATTR_RED_ON_BLACK);
+                }
+
                 // Player dead, still on game screen
                 // Move enemies, no scrolling, hide player
                 game_update_dying();
                 game_render_dying();
                 sound_update();
 
-                // Show "You lost" on both sides of level
-                ula_print_at(2, 10, "YOU LOST", ATTR_RED_ON_BLACK);
-                ula_print_at(22, 10, "YOU LOST", ATTR_RED_ON_BLACK);
-
                 // Apply shake if still active
                 if (game.shake_timer > 0) {
                     apply_shake();
                 }
-
-                // Border flash disabled for now
-                // if (game.crash_timer > 0) {
-                //     z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
-                // }
-                // else {
-                //     z80_outp(0xFE, 0x00);
-                // }
 
                 // Wait for fire to go to game over screen
                 if ((input & INPUT_FIRE) && debounce == 0) {
@@ -245,8 +233,8 @@ int main(void) {
 
             case STATE_GAMEOVER:
                 // Only run setup once when entering this state
-                if (!gameover_shown) {
-                    gameover_shown = 1;
+                if (!state_text_shown) {
+                    state_text_shown = 1;
                     // Hide all sprites
                     for (uint8_t s = 0; s < 32; s++) {
                         sprite_hide(s);
@@ -260,14 +248,16 @@ int main(void) {
                     ula_clear();
                     enable_gameplay();
                     game_init();
-                    gameover_shown = 0;
                 }
                 break;
 
             case STATE_LEVELCOMPLETE:
-                // Show level win message
-                ula_print_at(2, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
-                ula_print_at(21, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                // Show level win message once
+                if (!state_text_shown) {
+                    state_text_shown = 1;
+                    ula_print_at(2, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                    ula_print_at(21, 10, "LEVEL WIN", ATTR_GREEN_ON_BLACK);
+                }
 
                 // Wait for fire to restart
                 if ((input & INPUT_FIRE) && debounce == 0) {
