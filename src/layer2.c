@@ -5,9 +5,28 @@
 #include "layer2.h"
 #include "tileset.h"
 
+// External references to banked data (forces linker to include)
+extern uint8_t border_image_bank40;
+extern uint8_t border_image_bank41;
+
+// Use a dummy reference if necessary
+void force_include(void) {
+    volatile uint8_t *ptr = &border_image_bank40;
+    ptr = &border_image_bank41;
+    (void)ptr;
+}
+
 // Layer 2 uses 8K banks 16-21 (6 banks x 8K = 48K for 256x192x8bpp)
 // We'll use MMU slot 2 (0x4000-0x5FFF) for writing
 #define MMU_SLOT2_REG  0x52
+#define MMU_SLOT3_REG  0x53
+
+// Border image stored in 16K bank 20 (8K pages 40-41) loaded by NEX loader
+// Image dimensions: 60x191 = 11460 bytes
+// 16K bank 20 maps to 0xC000-0xFFFF when using MMU slots 6-7
+#define BORDER_IMAGE_WIDTH   60
+#define BORDER_IMAGE_HEIGHT  191
+#define BORDER_IMAGE_BANK_16K  20  // 16K bank number for MMU slot 6
 
 // Layer 2 background tiles (2x2 block = 16x16 pixels from tileset.h)
 #define L2_TILE_TL  tile_O0  // top-left
@@ -233,11 +252,81 @@ static void layer2_draw_block_256(uint8_t bx, uint8_t by) {
     IO_NEXTREG_DAT = old_bank;
 }
 
-// Initialize Layer 2 with black background and border tiles (256x192 mode)
-void layer2_init(void) {
-    uint8_t y;
-    uint8_t tile_idx;
+// Draw border image from bank to Layer 2
+// Source data is in pages 40-41, we map one at a time to slot 3 (0x6000)
+// Destination is Layer 2 banks 16-21 mapped to slot 2 (0x4000)
+// mirror: 0 = normal, 1 = horizontally mirrored
+static void layer2_draw_border_from_bank(uint8_t x, uint8_t y, uint8_t mirror) {
+    uint8_t row, col;
+    uint8_t screen_y;
+    uint8_t l2_bank, last_l2_bank;
+    uint8_t src_page, last_src_page;
+    uint8_t *dst;
+    const uint8_t *src;
+    uint8_t old_slot2, old_slot3;
+    uint16_t src_offset;
 
+    // Save current MMU banks
+    IO_NEXTREG_REG = MMU_SLOT2_REG;
+    old_slot2 = IO_NEXTREG_DAT;
+    IO_NEXTREG_REG = MMU_SLOT3_REG;
+    old_slot3 = IO_NEXTREG_DAT;
+
+    last_l2_bank = 0xFF;
+    last_src_page = 0xFF;
+    src_offset = 0;
+
+    for (row = 0; row < BORDER_IMAGE_HEIGHT; row++) {
+        screen_y = y + row;
+        if (screen_y >= 192) break;
+
+        // Determine destination Layer 2 bank (each bank = 32 lines)
+        l2_bank = 16 + (screen_y / 32);
+
+        // Determine source page (page 40 or 41 depending on offset)
+        // Each 8K page holds 8192 bytes
+        src_page = 40 + (src_offset / 8192);
+
+        // Remap destination bank if changed
+        if (l2_bank != last_l2_bank) {
+            IO_NEXTREG_REG = MMU_SLOT2_REG;
+            IO_NEXTREG_DAT = l2_bank;
+            last_l2_bank = l2_bank;
+        }
+
+        // Remap source page if changed
+        if (src_page != last_src_page) {
+            IO_NEXTREG_REG = MMU_SLOT3_REG;
+            IO_NEXTREG_DAT = src_page;
+            last_src_page = src_page;
+        }
+
+        // Calculate addresses
+        dst = (uint8_t *)0x4000 + ((screen_y % 32) * 256) + x;
+        src = (const uint8_t *)0x6000 + (src_offset % 8192);
+
+        // Copy row (mirrored or normal)
+        if (mirror) {
+            for (col = 0; col < BORDER_IMAGE_WIDTH; col++) {
+                dst[col] = src[BORDER_IMAGE_WIDTH - 1 - col];
+            }
+        } else {
+            for (col = 0; col < BORDER_IMAGE_WIDTH; col++) {
+                dst[col] = src[col];
+            }
+        }
+        src_offset += BORDER_IMAGE_WIDTH;
+    }
+
+    // Restore original banks
+    IO_NEXTREG_REG = MMU_SLOT2_REG;
+    IO_NEXTREG_DAT = old_slot2;
+    IO_NEXTREG_REG = MMU_SLOT3_REG;
+    IO_NEXTREG_DAT = old_slot3;
+}
+
+// Initialize Layer 2 with white background and border images (256x192 mode)
+void layer2_init(void) {
     // Disable interrupts during bank manipulation to prevent
     // IM1 handler from corrupting Layer 2 memory at 0x4000
     intrinsic_di();
@@ -247,29 +336,14 @@ void layer2_init(void) {
     IO_NEXTREG_REG = 0x12;
     IO_NEXTREG_DAT = 8;
 
-    // Fill with black background (256x192 = 6 banks)
-    layer2_clear(0x00);
+    // Fill with white background (256x192 = 6 banks)
+    layer2_clear(0xFF);
 
-    // Draw left border (2 tiles wide): G4,C4 / G5,C5
-    // Draw right border (2 tiles wide): F4,G4 / F5,G5
-    // 192 pixels / 8 = 24 tiles vertically
-    tile_idx = 0;
-    for (y = 0; y < 192; y += 8) {
-        if (tile_idx & 1) {
-            // Odd row
-            layer2_draw_tile(0, y, tile_G5);
-            layer2_draw_tile(8, y, tile_C5);
-            layer2_draw_tile(240, y, tile_F5);
-            layer2_draw_tile(248, y, tile_G5);
-        } else {
-            // Even row
-            layer2_draw_tile(0, y, tile_G4);
-            layer2_draw_tile(8, y, tile_C4);
-            layer2_draw_tile(240, y, tile_F4);
-            layer2_draw_tile(248, y, tile_G4);
-        }
-        tile_idx++;
-    }
+    // Draw left border image from bank 40
+    layer2_draw_border_from_bank(0, 0, 0);
+
+    // Draw right border image mirrored
+    layer2_draw_border_from_bank(256 - BORDER_IMAGE_WIDTH, 0, 1);
 
     // Restore MMU slot 2 before enabling interrupts
     IO_NEXTREG_REG = MMU_SLOT2_REG;

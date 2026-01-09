@@ -11,20 +11,29 @@ BIN_DIR = bin
 SRCS = src/main.c src/sprites.c src/game.c src/layer2.c src/tilemap.c src/ula.c src/sound.c \
        src/player.c src/bullet.c src/enemy.c src/collision.c src/level.c
 
+# Assembly files for banked data
+ASMS = src/border_data.asm
+
 # Header files
 HDRS = src/game.h src/layer2.h src/tilemap.h src/ula.h src/sprites.h src/spriteset.h src/tileset.h src/sound.h \
        src/player.h src/bullet.h src/enemy.h src/collision.h src/level.h include/level1.h
 
 # Default target - creates NEX file for ZX Spectrum Next
-all: $(BIN_DIR)/$(OUTPUT).nex
+all: $(BIN_DIR)/border_image.bin $(BIN_DIR)/$(OUTPUT).nex
+
+# Extract border image to binary and split into banks
+$(BIN_DIR)/border_image.bin: src/layer2_image.h tools/extract_image_bin.py | $(BIN_DIR)
+	python3 tools/extract_image_bin.py src/layer2_image.h $(BIN_DIR)/border_image.bin
+	head -c 8192 $(BIN_DIR)/border_image.bin > $(BIN_DIR)/border_bank40.bin
+	tail -c +8193 $(BIN_DIR)/border_image.bin > $(BIN_DIR)/border_bank41.bin
 
 # Create bin directory
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
 # Build NEX file (native ZX Spectrum Next format)
-$(BIN_DIR)/$(OUTPUT).nex: $(SRCS) $(HDRS) | $(BIN_DIR)
-	$(COMPILER) $(TARGET) $(CFLAGS) $(SRCS) -o $(BIN_DIR)/$(OUTPUT) -create-app -subtype=nex
+$(BIN_DIR)/$(OUTPUT).nex: $(SRCS) $(ASMS) $(HDRS) $(BIN_DIR)/border_image.bin | $(BIN_DIR)
+	$(COMPILER) $(TARGET) $(CFLAGS) $(SRCS) $(ASMS) -o $(BIN_DIR)/$(OUTPUT) -create-app -subtype=nex
 
 # Build TAP file (compatible with emulators)
 tap: $(SRCS) src/game.h | $(BIN_DIR)

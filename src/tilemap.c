@@ -220,13 +220,13 @@ void tilemap_init(void) {
 
 // Enable tilemap display
 void tilemap_enable(void) {
-    // Set tilemap clip window to ULA visible area + half border
+    // Set tilemap clip window to ULA screen area (256x192)
     // Register 0x1B: X1, X2, Y1, Y2 (written sequentially)
-    // Vertical: skip 16px (2 tiles) at top and bottom to show half border
-    ZXN_NEXTREG(0x1B, 0);     // X1 - start from left
-    ZXN_NEXTREG(0x1B, 255);   // X2 - to right edge
-    ZXN_NEXTREG(0x1B, 16);    // Y1 - skip top 2 rows (16 pixels)
-    ZXN_NEXTREG(0x1B, 239);   // Y2 - show up to 2 rows in bottom border
+    // Values are in 320x256 space, need to match ULA position
+    ZXN_NEXTREG(0x1B, 0);     // X1 = 0
+    ZXN_NEXTREG(0x1B, 159);   // X2 = 159 (160 pixels wide for game area)
+    ZXN_NEXTREG(0x1B, 32);    // Y1 = 32 (ULA starts 32 pixels down in 320x256 space)
+    ZXN_NEXTREG(0x1B, 223);   // Y2 = 223 (32 + 191)
 
     // Reg 0x6B Tilemap Control:
     // Bit 7: Enable tilemap (1)

@@ -64,6 +64,24 @@ Register **0x1B** controls the tilemap clip window. Values are written sequentia
 3. Y1 (top)
 4. Y2 (bottom)
 
+
+---
+
+## Tilemap Clip Window
+
+Register 0x1B sets the tilemap clip window (X1, X2, Y1, Y2 written sequentially).
+
+In 320x256 coordinate space, the ULA screen starts at Y=32:
+
+Is this one also orrect (works now):
+
+```c
+ZXN_NEXTREG(0x1B, 0);     // X1 = 0
+ZXN_NEXTREG(0x1B, 159);   // X2 = 159 (game area width)
+ZXN_NEXTREG(0x1B, 32);    // Y1 = 32 (ULA starts 32 pixels down)
+ZXN_NEXTREG(0x1B, 223);   // Y2 = 223 (32 + 191)
+```
+
 ### Clip to ULA area only:
 ```c
 ZXN_NEXTREG(0x1B, 0);     // X1

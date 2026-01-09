@@ -170,20 +170,20 @@ int main(void) {
                     apply_shake();
                 }
 
-                // Border flash color based on crash type
-                if (game.crash_timer > 0) {
-                    uint8_t flash_color;
-                    switch (game.crash_type) {
-                        case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
-                        case CRASH_ENEMY:      flash_color = 0x02; break;  // Red
-                        case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
-                        default:               flash_color = 0x07; break;  // White (level)
-                    }
-                    z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
-                }
-                else {
-                    z80_outp(0xFE, 0x00);
-                }
+                // Border flash disabled for now
+                // if (game.crash_timer > 0) {
+                //     uint8_t flash_color;
+                //     switch (game.crash_type) {
+                //         case CRASH_HOLE:       flash_color = 0x01; break;  // Blue
+                //         case CRASH_ENEMY:      flash_color = 0x02; break;  // Red
+                //         case CRASH_ENEMY_FAST: flash_color = 0x02; break;  // Red
+                //         default:               flash_color = 0x07; break;  // White (level)
+                //     }
+                //     z80_outp(0xFE, (game.crash_timer & 0x04) ? flash_color : 0x00);
+                // }
+                // else {
+                //     z80_outp(0xFE, 0x00);
+                // }
                 break;
 
             case STATE_PAUSED:
@@ -212,13 +212,13 @@ int main(void) {
                     apply_shake();
                 }
 
-                // Border flash if still active
-                if (game.crash_timer > 0) {
-                    z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
-                }
-                else {
-                    z80_outp(0xFE, 0x00);
-                }
+                // Border flash disabled for now
+                // if (game.crash_timer > 0) {
+                //     z80_outp(0xFE, (game.crash_timer & 0x04) ? 0x02 : 0x00);  // Red flash
+                // }
+                // else {
+                //     z80_outp(0xFE, 0x00);
+                // }
 
                 // Wait for fire to go to game over screen
                 if ((input & INPUT_FIRE) && debounce == 0) {
