@@ -4,6 +4,16 @@
 #include <stdint.h>
 #include "game.h"
 
+// Formation types
+#define FORMATION_SINGLE_PATROL   0  // Single enemy patrol left/right
+#define FORMATION_GROUP_PATROL    1  // 2-4 enemies patrol together
+#define FORMATION_ARROW           2  // Arrow/V formation
+#define FORMATION_GALAGA_DIVE     3  // Galaga-style diving pattern
+#define NUM_FORMATION_TYPES       4
+
+// Formation constants
+#define FORMATION_SPACING         20 // Spacing between enemies in formation
+
 // Initialize enemies (clear all)
 void enemies_init(void);
 
